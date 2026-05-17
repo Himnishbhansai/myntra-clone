@@ -1,35 +1,44 @@
+require("dotenv").config();
+
 const express = require("express");
 const mongoose = require("mongoose");
-const dotenv = require("dotenv");
-const userrouter = require("./routes/Userroutes");
-const categoryrouter = require("./routes/Categoryroutes");
-const productrouter = require("./routes/Productroutes");
-const Bagroutes = require("./routes/Bagroutes");
-const Wishlistroutes = require("./routes/Wishlistroutes");
-const OrderRoutes = require("./routes/OrderRoutes");
-const cors = require('cors');
-dotenv.config();
+const cors = require("cors");
+
 const app = express();
+
 app.use(express.json());
-app.use(cors({
-  origin: '*', 
-  credentials: true, 
-}));
-app.get("/", (req, res) => {
-  res.send("✅ Myntra backend in working");
-});
-app.use("/user", userrouter);
-app.use("/category", categoryrouter);
-app.use("/product", productrouter);
-app.use("/bag", Bagroutes);
-app.use("/wishlist", Wishlistroutes);
-app.use("/Order", OrderRoutes);
+app.use(cors());
+
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log("Mongodb connected");
-  })
+  .then(() => console.log("MongoDB Connected"))
   .catch((err) => console.log(err));
 
-const PORT = process.env.PORT;
-app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
+
+// ===== IMPORT ROUTES =====
+const userRoutes = require("./routes/Userroutes.js");
+const productRoutes = require("./routes/Productroutes.js");
+const categoryRoutes = require("./routes/Categoryroutes.js");
+const wishlistRoutes = require("./routes/Wishlistroutes.js");
+const bagRoutes = require("./routes/Bagroutes.js");
+const orderRoutes = require("./routes/OrderRoutes.js");
+
+
+// ===== USE ROUTES =====
+app.use("/user", userRoutes);
+app.use("/product", productRoutes);
+app.use("/category", categoryRoutes);
+app.use("/wishlist", wishlistRoutes);
+app.use("/bag", bagRoutes);
+app.use("/order", orderRoutes);
+
+
+app.get("/", (req,res)=>{
+    res.send("Backend running");
+});
+
+const PORT=process.env.PORT||5000;
+
+app.listen(PORT,()=>{
+    console.log(`Server running on ${PORT}`);
+});

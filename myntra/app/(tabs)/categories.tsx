@@ -131,7 +131,7 @@ export default function TabTwoScreen() {
     const fetchproduct = async () => {
       try {
         setIsLoading(true);
-        const cat = await axios.get("https://myntra-clone-xj36.onrender.com/category");
+        const cat = await axios.get("http://localhost:5000/category");
         setcategories(cat.data);
       } catch (error) {
         console.log(error);

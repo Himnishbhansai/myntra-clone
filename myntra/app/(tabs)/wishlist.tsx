@@ -46,7 +46,7 @@ export default function Wishlist() {
       try {
         setIsLoading(true);
         const bag = await axios.get(
-          `https://myntra-clone-xj36.onrender.com/wishlist/${user._id}`
+          `http://localhost:5000/wishlist/${user._id}`
         );
         setwishlist(bag.data);
       } catch (error) {
@@ -59,7 +59,7 @@ export default function Wishlist() {
   };
   const handledelete=async(itemid:any)=>{
     try {
-      await axios.delete(`https://myntra-clone-xj36.onrender.com/wishlist/${itemid}`)
+      await axios.delete(`http://localhost:5000/wishlist/${itemid}`)
       fetchproduct();
     } catch (error) {
       console.log(error)

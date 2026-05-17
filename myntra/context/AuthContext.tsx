@@ -32,7 +32,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const login = async (email: string, password: string) => {
     // 👉 Replace with your real API URL
-    const res = await axios.post("https://myntra-clone-xj36.onrender.com/user/login", {
+    const res = await axios.post("http://localhost:5000/user/login", {
       email,
       password,
     });
@@ -48,7 +48,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
   const Signup = async (fullName: string, email: string, password: string) => {
     // 👉 Replace with your real API URL
-    const res = await axios.post("https://myntra-clone-xj36.onrender.com/user/signup", {
+    const res = await axios.post("http://localhost:5000/user/signup", {
       fullName,
       email,
       password,
