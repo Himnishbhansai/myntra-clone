@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { getUserData, saveUserData, clearUserData } from "@/utils/storage";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import React from "react";
 import axios from "axios";
 
@@ -62,11 +63,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       throw new Error(data.message || "Login failed");
     }
   };
+  
   const logout = async () => {
-    await clearUserData();
-    setUser(null);
-    setIsAuthenticated(false);
-  };
+  await clearUserData();
+
+  // reset theme
+  await AsyncStorage.setItem(
+    "themeMode",
+    "light"
+  );
+
+  await AsyncStorage.setItem(
+    "accent",
+    "#FF3F6C"
+  );
+
+  setUser(null);
+
+  setIsAuthenticated(false);
+};
 
   return (
     <AuthContext.Provider
