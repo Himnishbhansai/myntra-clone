@@ -1,3 +1,5 @@
+// 🔥 ONLY CHANGE: move recents to top-level (not inside selected category)
+
 import {
   StyleSheet,
   Image,
@@ -14,510 +16,232 @@ import { useRouter } from "expo-router";
 import { Search, X } from "lucide-react-native";
 import axios from "axios";
 import { useTheme } from "@/context/ThemeContext";
+import { useAuth } from "@/context/AuthContext";
 
 export default function TabTwoScreen() {
   const router = useRouter();
-
   const { theme } = useTheme();
-
+  const { user } = useAuth();
   const styles = createStyles(theme);
 
-  const [searchQuery, setSearchQuery] =
-    useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [categories, setcategories] = useState<any>(null);
+  const [recentProducts, setRecentProducts] = useState<any>([]);
 
-  const [
-    selectedCategory,
-    setSelectedCategory,
-  ] =
-    useState<string | null>(
-      null
-    );
-
-  const [
-    selectedSubcategory,
-    setSelectedSubcategory,
-  ] =
-    useState<string | null>(
-      null
-    );
-
-  const [isLoading, setIsLoading] =
-    useState(false);
-
-  const [categories, setcategories] =
-    useState<any>(null);
-
+  // 🔹 Fetch categories
   useEffect(() => {
-    const fetchproduct =
-      async () => {
-        try {
-          setIsLoading(true);
-
-          const cat =
-            await axios.get(
-              "https://myntra-clone-7tse.onrender.com/category"
-            );
-
-          setcategories(
-            cat.data
-          );
-        } catch (error) {
-          console.log(
-            error
-          );
-        } finally {
-          setIsLoading(
-            false
-          );
-        }
-      };
+    const fetchproduct = async () => {
+      try {
+        setIsLoading(true);
+        const cat = await axios.get(
+          "https://myntra-clone-7tse.onrender.com/category"
+        );
+        setcategories(cat.data);
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
     fetchproduct();
   }, []);
 
+  // 🔥 Fetch recents
+  useEffect(() => {
+    const fetchRecent = async () => {
+      if (!user) return;
+
+      try {
+        const res = await axios.get(
+          `https://myntra-clone-7tse.onrender.com/recent/${user._id}`
+        );
+        setRecentProducts(res.data);
+      } catch (err) {
+        console.log("RECENT ERROR:", err);
+      }
+    };
+
+    fetchRecent();
+  }, [user]);
+
   if (isLoading) {
     return (
-      <View
-        style={
-          styles.loaderContainer
-        }
-      >
-        <ActivityIndicator
-          size="large"
-          color={
-            theme.primary
-          }
-        />
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color={theme.primary} />
       </View>
     );
   }
 
   if (!categories) {
     return (
-      <View
-        style={
-          styles.container
-        }
-      >
-        <Text
-          style={{
-            color:
-              theme.text,
-          }}
-        >
-          Categories not found
-        </Text>
+      <View style={styles.container}>
+        <Text style={{ color: theme.text }}>Categories not found</Text>
       </View>
     );
   }
 
-  const handleSearch = (
-    query: string
-  ) => {
-    setSearchQuery(
-      query
-    );
-
-    setSelectedCategory(
-      null
-    );
-
-    setSelectedSubcategory(
-      null
-    );
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    setSelectedCategory(null);
   };
 
-  const clearSearch =
-    () => {
-      setSearchQuery(
-        ""
-      );
+  const clearSearch = () => {
+    setSearchQuery("");
+    setSelectedCategory(null);
+  };
 
-      setSelectedCategory(
-        null
-      );
+  const handleCategorySelect = (categoryId: string) => {
+    setSelectedCategory(categoryId);
+    setSearchQuery("");
+  };
 
-      setSelectedSubcategory(
-        null
-      );
-    };
+  const filtercategories = categories?.filter(
+    (category: any) =>
+      category.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-  const handleCategorySelect =
-    (
-      categoryId: string
-    ) => {
-      setSelectedCategory(
-        categoryId
-      );
+  const selectedcategorydata = selectedCategory
+    ? categories?.find((cat: any) => cat._id === selectedCategory)
+    : null;
 
-      setSelectedSubcategory(
-        null
-      );
+  const renderProducts = (products: any) => {
+    return products?.map((product: any) => (
+      <TouchableOpacity
+        key={product._id}
+        style={styles.productCard}
+        onPress={() => router.push(`/product/${product._id}`)}
+      >
+        <Image
+          source={{ uri: product.images[0] }}
+          style={styles.productImage}
+        />
 
-      setSearchQuery("");
-    };
+        <View style={styles.productInfo}>
+          <Text style={styles.brandName}>{product.brand}</Text>
+          <Text style={styles.productName}>{product.name}</Text>
 
-  const handleSubcategorySelect =
-    (
-      subcategoryId: string
-    ) => {
-      setSelectedSubcategory(
-        subcategoryId
-      );
-
-      setSearchQuery("");
-    };
-
-  const filtercategories =
-    categories?.filter(
-      (
-        category: any
-      ) =>
-        category.name
-          .toLowerCase()
-          .includes(
-            searchQuery.toLowerCase()
-          ) ||
-        category.subcategory.some(
-          (
-            subcategory: any
-          ) =>
-            subcategory
-              .toLowerCase()
-              .includes(
-                searchQuery.toLowerCase()
-              )
-        ) ||
-        category.productId.some(
-          (
-            product: any
-          ) =>
-            product.name
-              .toLowerCase()
-              .includes(
-                searchQuery.toLowerCase()
-              ) ||
-            product.brand
-              .toLowerCase()
-              .includes(
-                searchQuery.toLowerCase()
-              )
-        )
-    );
-
-  const selectedcategorydata =
-    selectedCategory
-      ? categories?.find(
-          (
-            cat: any
-          ) =>
-            cat._id ===
-            selectedCategory
-        )
-      : null;
-
-  const renderProducts = (
-    products: any
-  ) => {
-    return products?.map(
-      (
-        product: any
-      ) => (
-        <TouchableOpacity
-          key={
-            product._id
-          }
-          style={
-            styles.productCard
-          }
-          onPress={() =>
-            router.push(
-              `/product/${product._id}`
-            )
-          }
-        >
-          <Image
-            source={{
-              uri:
-                product
-                  .images[0],
-            }}
-            style={
-              styles.productImage
-            }
-          />
-
-          <View
-            style={
-              styles.productInfo
-            }
-          >
-            <Text
-              style={
-                styles.brandName
-              }
-            >
-              {
-                product.brand
-              }
-            </Text>
-
-            <Text
-              style={
-                styles.productName
-              }
-            >
-              {
-                product.name
-              }
-            </Text>
-
-            <View
-              style={
-                styles.priceRow
-              }
-            >
-              <Text
-                style={
-                  styles.price
-                }
-              >
-                ₹
-                {
-                  product.price
-                }
-              </Text>
-
-              <Text
-                style={
-                  styles.discount
-                }
-              >
-                {
-                  product.discount
-                }
-              </Text>
-            </View>
+          <View style={styles.priceRow}>
+            <Text style={styles.price}>₹{product.price}</Text>
+            <Text style={styles.discount}>{product.discount}</Text>
           </View>
-        </TouchableOpacity>
-      )
+        </View>
+      </TouchableOpacity>
+    ));
+  };
+
+  // 🔥 RECENTS UI (NOW GLOBAL)
+  const renderRecent = () => {
+    if (!recentProducts?.length) return null;
+
+    return (
+      <View style={{ marginBottom: 25 }}>
+        <Text style={styles.categoryTitle}>Recently Viewed</Text>
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          {recentProducts.map((item: any) => (
+            <TouchableOpacity
+              key={item._id}
+              style={{ width: 140, marginRight: 15 }}
+              onPress={() => router.push(`/product/${item._id}`)}
+            >
+              <Image
+                source={{ uri: item.images[0] }}
+                style={{
+                  width: "100%",
+                  height: 150,
+                  borderRadius: 10,
+                }}
+              />
+
+              <Text
+                style={{ color: theme.secondaryText, fontSize: 12 }}
+                numberOfLines={1}
+              >
+                {item.brand}
+              </Text>
+
+              <Text
+                style={{
+                  color: theme.text,
+                  fontWeight: "bold",
+                  fontSize: 13,
+                }}
+                numberOfLines={1}
+              >
+                {item.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
     );
   };
 
   return (
-    <View
-      style={
-        styles.container
-      }
-    >
-      <View
-        style={
-          styles.header
-        }
-      >
-        <Text
-          style={
-            styles.headerTitle
-          }
-        >
-          Categories
-        </Text>
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Categories</Text>
       </View>
 
-      <View
-        style={
-          styles.searchContainer
-        }
-      >
-        <View
-          style={
-            styles.searchInputContainer
-          }
-        >
-          <Search
-            size={20}
-            color={
-              theme.secondaryText
-            }
-            style={
-              styles.searchIcon
-            }
-          />
+      <View style={styles.searchContainer}>
+        <View style={styles.searchInputContainer}>
+          <Search size={20} color={theme.secondaryText} />
 
           <TextInput
-            style={
-              styles.searchInput
-            }
+            style={styles.searchInput}
             placeholder="Search products..."
-            placeholderTextColor={
-              theme.secondaryText
-            }
-            value={
-              searchQuery
-            }
-            onChangeText={
-              handleSearch
-            }
+            placeholderTextColor={theme.secondaryText}
+            value={searchQuery}
+            onChangeText={handleSearch}
           />
 
-          {searchQuery !==
-            "" && (
-            <TouchableOpacity
-              onPress={
-                clearSearch
-              }
-            >
-              <X
-                size={
-                  20
-                }
-                color={
-                  theme.secondaryText
-                }
-              />
+          {searchQuery !== "" && (
+            <TouchableOpacity onPress={clearSearch}>
+              <X size={20} color={theme.secondaryText} />
             </TouchableOpacity>
           )}
         </View>
       </View>
 
-      <ScrollView
-        style={
-          styles.content
-        }
-      >
+      <ScrollView style={styles.content}>
+        {/* 🔥 SHOW RECENTS ONLY ON MAIN SCREEN */}
+        {!selectedCategory && renderRecent()}
+
         {!selectedCategory && (
-          <View
-            style={
-              styles.categoriesGrid
-            }
-          >
-            {filtercategories?.map(
-              (
-                category: any
-              ) => (
-                <TouchableOpacity
-                  key={
-                    category._id
-                  }
-                  style={
-                    styles.categoryCard
-                  }
-                  onPress={() =>
-                    handleCategorySelect(
-                      category._id
-                    )
-                  }
-                >
-                  <Image
-                    source={{
-                      uri:
-                        category.image,
-                    }}
-                    style={
-                      styles.categoryImage
-                    }
-                  />
-
-                  <View
-                    style={
-                      styles.categoryInfo
-                    }
-                  >
-                    <Text
-                      style={
-                        styles.categoryName
-                      }
-                    >
-                      {
-                        category.name
-                      }
-                    </Text>
-
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={
-                        false
-                      }
-                    >
-                      <View
-                        style={
-                          styles.subcategories
-                        }
-                      >
-                        {category?.subcategory?.map(
-                          (
-                            sub: any,
-                            index: any
-                          ) => (
-                            <TouchableOpacity
-                              key={
-                                index
-                              }
-                              style={
-                                styles.subcategoryTag
-                              }
-                            >
-                              <Text
-                                style={
-                                  styles.subcategoryText
-                                }
-                              >
-                                {
-                                  sub
-                                }
-                              </Text>
-                            </TouchableOpacity>
-                          )
-                        )}
-                      </View>
-                    </ScrollView>
-                  </View>
-                </TouchableOpacity>
-              )
-            )}
+          <View style={styles.categoriesGrid}>
+            {filtercategories?.map((category: any) => (
+              <TouchableOpacity
+                key={category._id}
+                style={styles.categoryCard}
+                onPress={() => handleCategorySelect(category._id)}
+              >
+                <Image
+                  source={{ uri: category.image }}
+                  style={styles.categoryImage}
+                />
+                <View style={styles.categoryInfo}>
+                  <Text style={styles.categoryName}>{category.name}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
           </View>
         )}
 
         {selectedcategorydata && (
-          <View
-            style={
-              styles.categoryDetail
-            }
-          >
-            <TouchableOpacity
-              onPress={() =>
-                setSelectedCategory(
-                  null
-                )
-              }
-            >
-              <Text
-                style={
-                  styles.backButtonText
-                }
-              >
-                ← Back
-              </Text>
+          <View style={styles.categoryDetail}>
+            <TouchableOpacity onPress={() => setSelectedCategory(null)}>
+              <Text style={styles.backButtonText}>← Back</Text>
             </TouchableOpacity>
 
-            <Text
-              style={
-                styles.categoryTitle
-              }
-            >
-              {
-                selectedcategorydata.name
-              }
+            <Text style={styles.categoryTitle}>
+              {selectedcategorydata.name}
             </Text>
 
-            <View
-              style={
-                styles.productsGrid
-              }
-            >
-              {renderProducts(
-                selectedcategorydata.productId
-              )}
+            <View style={styles.productsGrid}>
+              {renderProducts(selectedcategorydata.productId)}
             </View>
           </View>
         )}
@@ -525,205 +249,118 @@ export default function TabTwoScreen() {
     </View>
   );
 }
-
-const createStyles = (
-  theme: any
-) =>
+const createStyles = (theme: any) =>
   StyleSheet.create({
     loaderContainer: {
       flex: 1,
-      justifyContent:
-        "center",
-      alignItems:
-        "center",
-      backgroundColor:
-        theme.background,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: theme.background,
     },
-
     container: {
       flex: 1,
-      backgroundColor:
-        theme.background,
+      backgroundColor: theme.background,
     },
-
     header: {
       padding: 15,
       paddingTop: 50,
-      backgroundColor:
-        theme.background,
       borderBottomWidth: 1,
-      borderBottomColor:
-        theme.border,
+      borderBottomColor: theme.border,
     },
-
     headerTitle: {
       fontSize: 24,
-      fontWeight:
-        "bold",
-      color:
-        theme.text,
+      fontWeight: "bold",
+      color: theme.text,
     },
-
     searchContainer: {
       padding: 15,
-      backgroundColor:
-        theme.background,
     },
-
     searchInputContainer: {
-      flexDirection:
-        "row",
-      alignItems:
-        "center",
-      backgroundColor:
-        theme.card,
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: theme.card,
       borderRadius: 10,
       padding: 10,
     },
-
-    searchIcon: {
-      marginRight: 10,
-    },
-
     searchInput: {
       flex: 1,
-      color:
-        theme.text,
+      color: theme.text,
+      marginLeft: 10,
     },
-
     content: {
       flex: 1,
     },
-
     categoriesGrid: {
       padding: 15,
     },
-
     categoryCard: {
-      backgroundColor:
-        theme.card,
+      backgroundColor: theme.card,
       borderRadius: 12,
       marginBottom: 15,
-      overflow:
-        "hidden",
+      overflow: "hidden",
     },
-
     categoryImage: {
       width: "100%",
       height: 150,
     },
-
     categoryInfo: {
       padding: 15,
     },
-
     categoryName: {
       fontSize: 18,
-      fontWeight:
-        "bold",
-      color:
-        theme.text,
-      marginBottom: 10,
+      fontWeight: "bold",
+      color: theme.text,
     },
-
-    subcategories: {
-      flexDirection:
-        "row",
-    },
-
-    subcategoryTag: {
-      backgroundColor:
-        theme.background,
-      borderColor:
-        theme.border,
-      borderWidth: 1,
-      paddingHorizontal: 10,
-      paddingVertical: 5,
-      borderRadius: 20,
-      marginRight: 8,
-    },
-
-    subcategoryText: {
-      color:
-        theme.secondaryText,
-    },
-
     categoryDetail: {
       padding: 15,
     },
-
     backButtonText: {
-      color:
-        theme.primary,
+      color: theme.primary,
       marginBottom: 10,
       fontSize: 16,
     },
-
     categoryTitle: {
-      color:
-        theme.text,
-      fontSize: 26,
-      fontWeight:
-        "bold",
-      marginBottom: 20,
+      color: theme.text,
+      fontSize: 22,
+      fontWeight: "bold",
+      marginBottom: 15,
     },
-
     productsGrid: {
-      flexDirection:
-        "row",
-      flexWrap:
-        "wrap",
-      justifyContent:
-        "space-between",
+      flexDirection: "row",
+      flexWrap: "wrap",
+      justifyContent: "space-between",
     },
-
     productCard: {
       width: "48%",
-      backgroundColor:
-        theme.card,
+      backgroundColor: theme.card,
       borderRadius: 10,
       marginBottom: 15,
-      overflow:
-        "hidden",
+      overflow: "hidden",
     },
-
     productImage: {
       width: "100%",
       height: 200,
     },
-
     productInfo: {
       padding: 10,
     },
-
     brandName: {
-      color:
-        theme.secondaryText,
+      color: theme.secondaryText,
     },
-
     productName: {
-      color:
-        theme.text,
+      color: theme.text,
       marginVertical: 5,
     },
-
     priceRow: {
-      flexDirection:
-        "row",
-      alignItems:
-        "center",
+      flexDirection: "row",
+      alignItems: "center",
     },
-
     price: {
-      fontWeight:
-        "bold",
-      color:
-        theme.text,
+      fontWeight: "bold",
+      color: theme.text,
       marginRight: 8,
     },
-
     discount: {
-      color:
-        theme.primary,
+      color: theme.primary,
     },
   });

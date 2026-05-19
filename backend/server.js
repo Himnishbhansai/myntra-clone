@@ -14,31 +14,21 @@ mongoose
   .then(() => console.log("MongoDB Connected"))
   .catch((err) => console.log(err));
 
+// ROUTES
+app.use("/user", require("./routes/Userroutes"));
+app.use("/product", require("./routes/Productroutes"));
+app.use("/category", require("./routes/Categoryroutes"));
+app.use("/wishlist", require("./routes/Wishlistroutes"));
+app.use("/bag", require("./routes/Bagroutes"));
+app.use("/order", require("./routes/OrderRoutes"));
+app.use("/recent", require("./routes/Recentroutes"));
 
-// ===== IMPORT ROUTES =====
-const userRoutes = require("./routes/Userroutes.js");
-const productRoutes = require("./routes/Productroutes.js");
-const categoryRoutes = require("./routes/Categoryroutes.js");
-const wishlistRoutes = require("./routes/Wishlistroutes.js");
-const bagRoutes = require("./routes/Bagroutes.js");
-const orderRoutes = require("./routes/OrderRoutes.js");
-
-
-// ===== USE ROUTES =====
-app.use("/user", userRoutes);
-app.use("/product", productRoutes);
-app.use("/category", categoryRoutes);
-app.use("/wishlist", wishlistRoutes);
-app.use("/bag", bagRoutes);
-app.use("/order", orderRoutes);
-
-
-app.get("/", (req,res)=>{
-    res.send("Backend running");
+app.get("/", (req, res) => {
+  res.send("Backend running");
 });
 
-const PORT=process.env.PORT||5000;
+const PORT = process.env.PORT || 5000;
 
-app.listen(PORT,()=>{
-    console.log(`Server running on ${PORT}`);
+app.listen(PORT, () => {
+  console.log(`Server running on ${PORT}`);
 });

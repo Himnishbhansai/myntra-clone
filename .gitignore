@@ -9,6 +9,7 @@ backend/build/
 # Ignore environment files
 myntra/.env
 backend/.env
+.env*local
 
 # Optional: Ignore other unnecessary files
 *.log
