@@ -28,6 +28,21 @@ export default function Bag() {
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [savedItems, setSavedItems] = useState<any[]>([]);
 
+  const updateQuantity = async (id: string, newQty: number) => {
+  try {
+    if (newQty < 1) return;
+
+    await axios.put(
+      `https://myntra-clone-7tse.onrender.com/bag/quantity/${id}`,
+      { quantity: newQty }
+    );
+
+    fetchCart(); // refresh UI
+  } catch (err) {
+    console.log(err);
+  }
+};
+
   useEffect(() => {
     if (user) fetchCart();
   }, [user]);
@@ -150,7 +165,10 @@ export default function Bag() {
               </Text>
 
               <View style={styles.quantityContainer}>
-                <TouchableOpacity style={styles.quantityButton}>
+                <TouchableOpacity
+                  style={styles.quantityButton}
+                  onPress={() => updateQuantity(item._id, item.quantity - 1)}
+                >
                   <Minus size={20} color={theme.text} />
                 </TouchableOpacity>
 
@@ -158,15 +176,11 @@ export default function Bag() {
                   {item.quantity}
                 </Text>
 
-                <TouchableOpacity style={styles.quantityButton}>
-                  <Plus size={20} color={theme.text} />
-                </TouchableOpacity>
-
                 <TouchableOpacity
-                  style={styles.removeButton}
-                  onPress={() => handledelete(item._id)}
+                  style={styles.quantityButton}
+                  onPress={() => updateQuantity(item._id, item.quantity + 1)}
                 >
-                  <Trash2 size={20} color={theme.primary} />
+                  <Plus size={20} color={theme.text} />
                 </TouchableOpacity>
               </View>
 
