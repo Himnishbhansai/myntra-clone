@@ -33,17 +33,14 @@ export default function ProductDetails() {
   const [product, setProduct] = useState<any>(null);
   const [isWishlist, setIsWishlist] = useState(false);
 
+  // 🔥 NEW
+  const [recommended, setRecommended] = useState<any>([]);
+
   const scrollViewRef = useRef<ScrollView>(null);
   const autoScrollTimer = useRef<any>(null);
 
   useEffect(() => {
     fetchProduct();
-
-    return () => {
-      if (autoScrollTimer.current) {
-        clearInterval(autoScrollTimer.current);
-      }
-    };
   }, [id]);
 
   useEffect(() => {
@@ -52,20 +49,17 @@ export default function ProductDetails() {
     }
 
     return () => {
-      if (autoScrollTimer.current) {
-        clearInterval(autoScrollTimer.current);
-      }
+      if (autoScrollTimer.current) clearInterval(autoScrollTimer.current);
     };
   }, [product, currentImageIndex]);
 
+  // 🔥 FETCH PRODUCT
   const fetchProduct = async () => {
     try {
       setIsLoading(true);
-
       const res = await axios.get(
         `https://myntra-clone-7tse.onrender.com/product/${id}`
       );
-
       setProduct(res.data);
     } catch (err) {
       console.log(err);
@@ -74,7 +68,7 @@ export default function ProductDetails() {
     }
   };
 
-  // ✅ SAVE TO RECENTS (ONLY BACKEND)
+  // 🔥 SAVE RECENT (backend)
   useEffect(() => {
     const addRecent = async () => {
       if (!user || !id) return;
@@ -93,12 +87,28 @@ export default function ProductDetails() {
     };
 
     addRecent();
-  }, [id, user]); // ✅ FIXED
+  }, [id, user]);
+
+  // 🔥 FETCH RECOMMENDATIONS
+  useEffect(() => {
+    const fetchRecommendations = async () => {
+      if (!id) return;
+
+      try {
+        const res = await axios.get(
+          `https://myntra-clone-7tse.onrender.com/recommend/${id}`
+        );
+        setRecommended(res.data);
+      } catch (err) {
+        console.log("RECOMMEND ERROR:", err);
+      }
+    };
+
+    fetchRecommendations();
+  }, [id]);
 
   const startAutoScroll = () => {
-    if (autoScrollTimer.current) {
-      clearInterval(autoScrollTimer.current);
-    }
+    if (autoScrollTimer.current) clearInterval(autoScrollTimer.current);
 
     autoScrollTimer.current = setInterval(() => {
       if (!product?.images) return;
@@ -123,10 +133,7 @@ export default function ProductDetails() {
   };
 
   const handleAddWishlist = async () => {
-    if (!user) {
-      router.push("/login");
-      return;
-    }
+    if (!user) return router.push("/login");
 
     try {
       await axios.post(
@@ -145,10 +152,7 @@ export default function ProductDetails() {
   };
 
   const handleAddToBag = async () => {
-    if (!user) {
-      router.push("/login");
-      return;
-    }
+    if (!user) return router.push("/login");
 
     if (!selectedSize) {
       Alert.alert("Select Size", "Please select a size");
@@ -179,12 +183,7 @@ export default function ProductDetails() {
 
   if (isLoading) {
     return (
-      <View
-        style={[
-          styles.loaderContainer,
-          { backgroundColor: isDark ? "#111" : "#fff" },
-        ]}
-      >
+      <View style={styles.loaderContainer}>
         <ActivityIndicator size="large" color="#ff3f6c" />
       </View>
     );
@@ -192,182 +191,111 @@ export default function ProductDetails() {
 
   if (!product) {
     return (
-      <View
-        style={[
-          styles.container,
-          { backgroundColor: isDark ? "#111" : "#fff" },
-        ]}
-      >
-        <Text style={{ color: isDark ? "#fff" : "#000" }}>
-          Product not found
-        </Text>
+      <View style={styles.container}>
+        <Text>Product not found</Text>
       </View>
     );
   }
 
   return (
-    <View
-      style={[
-        styles.container,
-        { backgroundColor: isDark ? "#111" : "#fff" },
-      ]}
-    >
+    <View style={styles.container}>
       <ScrollView>
-        <View style={styles.carouselContainer}>
-          <ScrollView
-            ref={scrollViewRef}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
-          >
-            {product.images?.map((image: string, index: number) => (
-              <Image
-                key={index}
-                source={{ uri: image }}
-                style={[styles.productImage, { width }]}
-              />
-            ))}
-          </ScrollView>
+        {/* 🔥 IMAGES */}
+        <ScrollView
+          ref={scrollViewRef}
+          horizontal
+          pagingEnabled
+          onScroll={handleScroll}
+          showsHorizontalScrollIndicator={false}
+        >
+          {product.images?.map((img: string, i: number) => (
+            <Image key={i} source={{ uri: img }} style={{ width, height: 400 }} />
+          ))}
+        </ScrollView>
 
-          <View style={styles.pagination}>
-            {product.images?.map((_: any, index: number) => (
-              <View
-                key={index}
-                style={[
-                  styles.paginationDot,
-                  currentImageIndex === index &&
-                    styles.paginationDotActive,
-                ]}
-              />
-            ))}
-          </View>
-        </View>
+        {/* 🔥 DETAILS */}
+        <View style={{ padding: 20 }}>
+          <Text style={{ color: isDark ? "#aaa" : "#666" }}>
+            {product.brand}
+          </Text>
 
-        <View style={styles.content}>
-          <View style={styles.header}>
-            <View style={{ flex: 1 }}>
-              <Text
-                style={[
-                  styles.brand,
-                  { color: isDark ? "#aaa" : "#666" },
-                ]}
-              >
-                {product.brand}
-              </Text>
+          <Text style={{ fontSize: 22, fontWeight: "bold" }}>
+            {product.name}
+          </Text>
 
-              <Text
-                style={[
-                  styles.name,
-                  { color: isDark ? "#fff" : "#000" },
-                ]}
-              >
-                {product.name}
-              </Text>
-            </View>
-
-            <TouchableOpacity
-              style={styles.wishlistButton}
-              onPress={handleAddWishlist}
-            >
-              <Heart
-                size={25}
-                color={isWishlist ? "#ff3f6c" : "#ccc"}
-                fill={isWishlist ? "#ff3f6c" : "none"}
-              />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.priceContainer}>
-            <Text
-              style={[
-                styles.price,
-                { color: isDark ? "#fff" : "#000" },
-              ]}
-            >
-              ₹{product.price}
-            </Text>
-
-            <Text style={styles.discount}>
+          <Text style={{ fontSize: 20, marginTop: 10 }}>
+            ₹{product.price}{" "}
+            <Text style={{ color: "#ff3f6c" }}>
               {product.discount}
             </Text>
-          </View>
+          </Text>
 
-          <Text
-            style={[
-              styles.description,
-              { color: isDark ? "#bbb" : "#666" },
-            ]}
-          >
+          <Text style={{ marginTop: 15 }}>
             {product.description}
           </Text>
 
-          <View style={styles.sizeSection}>
-            <Text
-              style={[
-                styles.sizeTitle,
-                { color: isDark ? "#fff" : "#000" },
-              ]}
-            >
-              Select Size
-            </Text>
+          {/* 🔥 SIZE */}
+          <View style={{ marginTop: 20 }}>
+            <Text>Select Size</Text>
 
-            <View style={styles.sizeGrid}>
+            <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
               {product.sizes?.map((size: string) => (
                 <TouchableOpacity
                   key={size}
                   style={[
                     styles.sizeButton,
-                    {
-                      borderColor: isDark ? "#444" : "#ddd",
-                    },
-                    selectedSize === size &&
-                      styles.selectedSize,
+                    selectedSize === size && styles.selectedSize,
                   ]}
                   onPress={() => setSelectedSize(size)}
                 >
-                  <Text
-                    style={[
-                      styles.sizeText,
-                      { color: isDark ? "#fff" : "#000" },
-                      selectedSize === size &&
-                        styles.selectedSizeText,
-                    ]}
-                  >
-                    {size}
-                  </Text>
+                  <Text>{size}</Text>
                 </TouchableOpacity>
               ))}
             </View>
           </View>
         </View>
+
+        {/* 🔥 RECOMMENDATIONS */}
+        {recommended?.length > 0 && (
+          <View style={{ padding: 20 }}>
+            <Text style={{ fontSize: 18, fontWeight: "bold" }}>
+              You May Also Like
+            </Text>
+
+            <ScrollView horizontal>
+              {recommended.map((item: any) => (
+                <TouchableOpacity
+                  key={item._id}
+                  style={{ width: 140, marginRight: 15 }}
+                  onPress={() =>
+                    router.push(`/product/${item._id}`)
+                  }
+                >
+                  <Image
+                    source={{ uri: item.images[0] }}
+                    style={{
+                      width: "100%",
+                      height: 150,
+                      borderRadius: 10,
+                    }}
+                  />
+                  <Text>{item.brand}</Text>
+                  <Text numberOfLines={1}>{item.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
       </ScrollView>
 
-      <View
-        style={[
-          styles.footer,
-          {
-            backgroundColor: isDark ? "#111" : "#fff",
-            borderColor: isDark ? "#222" : "#eee",
-          },
-        ]}
-      >
+      {/* 🔥 FOOTER */}
+      <View style={styles.footer}>
         <TouchableOpacity
           style={styles.addToBagButton}
           onPress={handleAddToBag}
-          disabled={buttonLoading}
         >
-          {buttonLoading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <>
-              <ShoppingBag size={20} color="#fff" />
-              <Text style={styles.addToBagText}>
-                ADD TO BAG
-              </Text>
-            </>
-          )}
+          <ShoppingBag size={20} color="#fff" />
+          <Text style={styles.addToBagText}>ADD TO BAG</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -381,83 +309,27 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  carouselContainer: { position: "relative" },
-  productImage: { height: 400 },
-  pagination: {
-    position: "absolute",
-    bottom: 20,
-    width: "100%",
-    flexDirection: "row",
-    justifyContent: "center",
-  },
-  paginationDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 5,
-    backgroundColor: "#bbb",
-    marginHorizontal: 5,
-  },
-  paginationDotActive: {
-    backgroundColor: "#fff",
-    width: 10,
-    height: 10,
-  },
-  content: { padding: 20 },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  name: {
-    fontSize: 22,
-    fontWeight: "bold",
-    marginTop: 4,
-  },
-  wishlistButton: { padding: 10 },
-  priceContainer: {
-    flexDirection: "row",
-    marginTop: 15,
-    alignItems: "center",
-  },
-  price: { fontSize: 22, fontWeight: "bold" },
-  discount: { marginLeft: 10, color: "#ff3f6c" },
-  description: { marginTop: 20, lineHeight: 24 },
-  sizeSection: { marginTop: 25 },
-  sizeTitle: { fontWeight: "bold", marginBottom: 15 },
-  sizeGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-  },
   sizeButton: {
-    width: 55,
-    height: 55,
-    borderRadius: 30,
     borderWidth: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    padding: 10,
+    margin: 5,
+    borderRadius: 20,
   },
   selectedSize: {
-    borderColor: "#ff3f6c",
-    backgroundColor: "#fff1f5",
+    backgroundColor: "#ff3f6c",
   },
-  sizeText: { fontWeight: "600" },
-  selectedSizeText: { color: "#ff3f6c" },
   footer: {
     padding: 15,
-    borderTopWidth: 1,
   },
   addToBagButton: {
     backgroundColor: "#ff3f6c",
-    padding: 16,
-    borderRadius: 12,
+    padding: 15,
     flexDirection: "row",
     justifyContent: "center",
-    alignItems: "center",
     gap: 10,
   },
   addToBagText: {
     color: "#fff",
     fontWeight: "bold",
-    fontSize: 16,
   },
 });

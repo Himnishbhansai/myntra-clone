@@ -1,4 +1,4 @@
-// 🔥 ONLY CHANGE: move recents to top-level (not inside selected category)
+// ✅ FINAL CLEAN VERSION (SCALABLE)
 
 import {
   StyleSheet,
@@ -29,6 +29,7 @@ export default function TabTwoScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [categories, setcategories] = useState<any>(null);
   const [recentProducts, setRecentProducts] = useState<any>([]);
+  const [categoryProducts, setCategoryProducts] = useState<any>([]); // ✅ NEW
 
   // 🔹 Fetch categories
   useEffect(() => {
@@ -67,6 +68,31 @@ export default function TabTwoScreen() {
     fetchRecent();
   }, [user]);
 
+  // ✅ FETCH PRODUCTS BY CATEGORY
+  useEffect(() => {
+    const fetchCategoryProducts = async () => {
+      if (!selectedCategory) return;
+
+      const selected = categories?.find(
+        (cat: any) => cat._id === selectedCategory
+      );
+
+      if (!selected) return;
+
+      try {
+        const res = await axios.get(
+          `https://myntra-clone-7tse.onrender.com/product/category/${selected.name}`
+        );
+
+        setCategoryProducts(res.data);
+      } catch (err) {
+        console.log(err);
+      }
+    };
+
+    fetchCategoryProducts();
+  }, [selectedCategory]);
+
   if (isLoading) {
     return (
       <View style={styles.loaderContainer}>
@@ -98,9 +124,8 @@ export default function TabTwoScreen() {
     setSearchQuery("");
   };
 
-  const filtercategories = categories?.filter(
-    (category: any) =>
-      category.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const filtercategories = categories?.filter((category: any) =>
+    category.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const selectedcategorydata = selectedCategory
@@ -132,7 +157,7 @@ export default function TabTwoScreen() {
     ));
   };
 
-  // 🔥 RECENTS UI (NOW GLOBAL)
+  // 🔥 FIXED RECENTS (IMPORTANT)
   const renderRecent = () => {
     if (!recentProducts?.length) return null;
 
@@ -145,10 +170,12 @@ export default function TabTwoScreen() {
             <TouchableOpacity
               key={item._id}
               style={{ width: 140, marginRight: 15 }}
-              onPress={() => router.push(`/product/${item._id}`)}
+              onPress={() =>
+                router.push(`/product/${item.productId._id}`) // ✅ FIXED
+              }
             >
               <Image
-                source={{ uri: item.images[0] }}
+                source={{ uri: item.productId.images[0] }} // ✅ FIXED
                 style={{
                   width: "100%",
                   height: 150,
@@ -160,7 +187,7 @@ export default function TabTwoScreen() {
                 style={{ color: theme.secondaryText, fontSize: 12 }}
                 numberOfLines={1}
               >
-                {item.brand}
+                {item.productId.brand}
               </Text>
 
               <Text
@@ -171,7 +198,7 @@ export default function TabTwoScreen() {
                 }}
                 numberOfLines={1}
               >
-                {item.name}
+                {item.productId.name}
               </Text>
             </TouchableOpacity>
           ))}
@@ -207,7 +234,6 @@ export default function TabTwoScreen() {
       </View>
 
       <ScrollView style={styles.content}>
-        {/* 🔥 SHOW RECENTS ONLY ON MAIN SCREEN */}
         {!selectedCategory && renderRecent()}
 
         {!selectedCategory && (
@@ -223,7 +249,9 @@ export default function TabTwoScreen() {
                   style={styles.categoryImage}
                 />
                 <View style={styles.categoryInfo}>
-                  <Text style={styles.categoryName}>{category.name}</Text>
+                  <Text style={styles.categoryName}>
+                    {category.name}
+                  </Text>
                 </View>
               </TouchableOpacity>
             ))}
@@ -241,7 +269,7 @@ export default function TabTwoScreen() {
             </Text>
 
             <View style={styles.productsGrid}>
-              {renderProducts(selectedcategorydata.productId)}
+              {renderProducts(categoryProducts)} {/* ✅ FIXED */}
             </View>
           </View>
         )}
@@ -249,6 +277,8 @@ export default function TabTwoScreen() {
     </View>
   );
 }
+
+
 const createStyles = (theme: any) =>
   StyleSheet.create({
     loaderContainer: {

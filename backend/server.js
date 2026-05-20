@@ -22,6 +22,7 @@ app.use("/wishlist", require("./routes/Wishlistroutes"));
 app.use("/bag", require("./routes/Bagroutes"));
 app.use("/order", require("./routes/OrderRoutes"));
 app.use("/recent", require("./routes/Recentroutes"));
+app.use("/recommend", require("./routes/Recommendationroutes"));
 
 app.get("/", (req, res) => {
   res.send("Backend running");

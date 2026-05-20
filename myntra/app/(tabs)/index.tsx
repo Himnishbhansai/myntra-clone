@@ -474,11 +474,15 @@ fontWeight:"bold"
 productsGrid:{
 flexDirection:"row",
 flexWrap:"wrap",
-marginHorizontal:-8
+marginHorizontal:-8,
+width:"110%",
+paddingHorizontal:20
+
 },
 
 productCard:{
 width:"48%",
+padding: 10,
 marginHorizontal:"1%",
 marginBottom:15,
 
