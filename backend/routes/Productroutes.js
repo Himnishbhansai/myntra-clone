@@ -22,4 +22,19 @@ router.get("/:id", async (req, res) => {
     return res.status(500).json({ message: "Something went wrong" });
   }
 });
+
+// ✅ GET products by category
+router.get("/category/:name", async (req, res) => {
+  try {
+    const products = await Product.find({
+      category: req.params.name,
+    });
+
+    res.json(products);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Error fetching products" });
+  }
+});
+
 module.exports = router;
