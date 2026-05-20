@@ -137,7 +137,7 @@ export default function TabTwoScreen() {
     if (!recentProducts?.length) return null;
 
     return (
-      <View style={{ marginBottom: 25 }}>
+      <View style={{ margin: 20 }}>
         <Text style={styles.categoryTitle}>Recently Viewed</Text>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>

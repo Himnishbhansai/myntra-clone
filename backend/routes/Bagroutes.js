@@ -34,4 +34,23 @@ router.delete("/:itemid", async (req, res) => {
     return res.status(500).json({ message: "Error removing item from bag" });
   }
 });
+
+// 🔁 Move item (cart <-> save for later)
+router.put("/move/:id", async (req, res) => {
+  try {
+    const { savedForLater } = req.body;
+
+    const updatedItem = await Bag.findByIdAndUpdate(
+      req.params.id,
+      { savedForLater },
+      { new: true }
+    );
+
+    res.json(updatedItem);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Error moving item" });
+  }
+});
+
 module.exports = router;
