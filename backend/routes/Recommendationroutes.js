@@ -37,4 +37,20 @@ router.get("/:productId", async (req, res) => {
   }
 });
 
+// 📥 GET
+router.get("/:userId", async (req, res) => {
+  try {
+    const recents = await Recent.find({
+      userId: req.params.userId,
+    })
+      .sort({ createdAt: -1 })
+      .populate("productId");
+
+    res.json(recents); // ✅ send full object
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Error fetching recents" });
+  }
+});
+
 module.exports = router;
