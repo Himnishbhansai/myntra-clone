@@ -1,4 +1,4 @@
-require("dotenv").config();
+/*require("dotenv").config();
 
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
@@ -154,4 +154,4 @@ mongoose
 
     process.exit();
   })
-  .catch((err) => console.log(err));
+  .catch((err) => console.log(err));*/
