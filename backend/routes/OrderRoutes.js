@@ -2,7 +2,6 @@ const express = require("express");
 const Bag = require("../models/Bag");
 const Order = require("../models/Order");
 const router = express.Router();
-const mongoose = require("mongoose");
 
 function genrateRandomTracking() {
   const carriers = ["Delhivery", "Bluedart", "Ecom Express", "XpressBees"];
@@ -13,7 +12,9 @@ function genrateRandomTracking() {
     "In Transit",
   ];
   const locations = ["Mumbai", "Delhi", "Bangalore", "Hyderabad", "Pune"];
-  const randomcarrier = carriers[Math.floor(Math.random() * carriers.length)];
+
+  const randomcarrier =
+    carriers[Math.floor(Math.random() * carriers.length)];
   const randomstatusOptions =
     statusOptions[Math.floor(Math.random() * statusOptions.length)];
   const randomlocations =
@@ -41,50 +42,99 @@ function genrateRandomTracking() {
     ],
   };
 }
+
+// ✅ UPDATED CHECKOUT (PRODUCTION SAFE)
 router.post("/create/:userId", async (req, res) => {
   try {
     const userid = req.params.userId;
-    const bag = await Bag.find({ userId: userid }).populate("productId");
+
+    const bag = await Bag.find({
+      userId: userid,
+      savedForLater: false,
+    }).populate("productId");
+
     if (bag.length === 0) {
       return res.status(400).json({ message: "No item in the bag" });
     }
-    const orderitem = bag.map((item) => ({
+
+    // 🔥 VALIDATION
+    for (let item of bag) {
+      const product = item.productId;
+
+      if (!product) {
+        return res.status(400).json({
+          message: "Some products are no longer available",
+        });
+      }
+
+      if (product.stock < item.quantity) {
+        return res.status(400).json({
+          message: `${product.name} is out of stock`,
+        });
+      }
+
+      if (item.priceAtAdd && item.priceAtAdd !== product.price) {
+        return res.status(400).json({
+          message: `${product.name} price has changed`,
+        });
+      }
+    }
+
+    // ✅ CREATE ORDER ITEMS
+    const orderItems = bag.map((item) => ({
       productId: item.productId._id,
       size: item.size,
       price: item.productId.price,
       quantity: item.quantity,
     }));
-    const total = orderitem.reduce(
-      (sum, item) => sum + item.price + item.quantity,
+
+    // ✅ FIXED TOTAL
+    const total = orderItems.reduce(
+      (sum, item) => sum + item.price * item.quantity,
       0
     );
+
     const newOrder = new Order({
       userId: userid,
       date: new Date().toISOString(),
       status: "Processing",
-      item: orderitem,
+      items: orderItems, // ✅ FIXED
       total: total,
       shippingAddress: req.body.shippingAddress,
-      paymentMethod:req.body.paymentMethod,
+      paymentMethod: req.body.paymentMethod,
       tracking: genrateRandomTracking(),
     });
+
     await newOrder.save();
-    await Bag.deleteMany({ userId: userid });
-    res.status(200).json({ message: "Order placed successfully" });
+
+    // 🧹 CLEAR ONLY ACTIVE CART
+    await Bag.deleteMany({
+      userId: userid,
+      savedForLater: false,
+    });
+
+    res.status(200).json({
+      message: "Order placed successfully",
+      order: newOrder,
+    });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: "Something went wrong" });
   }
 });
+
+// ✅ GET USER ORDERS
 router.get("/user/:userid", async (req, res) => {
   try {
-    const order = await Order.find({ userId: req.params.userid }).populate(
-      "items.productId"
-    );
+    const order = await Order.find({
+      userId: req.params.userid,
+    }).populate("items.productId");
+
     res.status(200).json(order);
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: "Something went wrong" });
   }
 });
+
 module.exports = router;
