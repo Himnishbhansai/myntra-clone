@@ -159,23 +159,27 @@ export default function TabTwoScreen() {
 
   // 🔥 FIXED RECENTS (IMPORTANT)
   const renderRecent = () => {
-    if (!recentProducts?.length) return null;
+  if (!recentProducts?.length) return null;
 
-    return (
-      <View style={{ margin: 20 }}>
-        <Text style={styles.categoryTitle}>Recently Viewed</Text>
+  return (
+    <View style={{ margin: 20 }}>
+      <Text style={styles.categoryTitle}>Recently Viewed</Text>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {recentProducts.map((item: any) => (
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        {recentProducts.map((item: any) => {
+          // ✅ SAFETY CHECK (CRITICAL)
+          if (!item?.productId) return null;
+
+          return (
             <TouchableOpacity
               key={item._id}
               style={{ width: 140, marginRight: 15 }}
               onPress={() =>
-                router.push(`/product/${item.productId._id}`) // ✅ FIXED
+                router.push(`/product/${item.productId._id}`)
               }
             >
               <Image
-                source={{ uri: item.productId.images[0] }} // ✅ FIXED
+                source={{ uri: item.productId.images?.[0] }} // ✅ safe access
                 style={{
                   width: "100%",
                   height: 150,
@@ -201,11 +205,12 @@ export default function TabTwoScreen() {
                 {item.productId.name}
               </Text>
             </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
-    );
-  };
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+};
 
   return (
     <View style={styles.container}>

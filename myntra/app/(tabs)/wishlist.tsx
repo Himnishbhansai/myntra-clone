@@ -123,104 +123,24 @@ export default function Wishlist() {
       <ScrollView
         style={styles.content}
       >
-        {wishlist?.map(
-          (item: any) => (
-            <View
-              key={item._id}
-              style={
-                styles.wishlistItem
-              }
-            >
-              <Image
-                source={{
-                  uri:
-                    item.productId
-                      .images[0],
-                }}
-                style={
-                  styles.itemImage
-                }
-              />
+        {wishlist?.map((item: any) => {
+  if (!item.productId) return null; // ✅ IMPORTANT FIX
 
-              <View
-                style={
-                  styles.itemInfo
-                }
-              >
-                <Text
-                  style={
-                    styles.brandName
-                  }
-                >
-                  {
-                    item.productId
-                      .brand
-                  }
-                </Text>
+  return (
+    <TouchableOpacity
+      key={item._id}
+      onPress={() => router.push(`/product/${item.productId._id}`)}
+    >
+      <Image
+        source={{ uri: item.productId.images?.[0] }} // ✅ safe access
+        style={{ width: 150, height: 200 }}
+      />
 
-                <Text
-                  style={
-                    styles.itemName
-                  }
-                >
-                  {
-                    item.productId
-                      .name
-                  }
-                </Text>
-
-                <View
-                  style={
-                    styles.priceContainer
-                  }
-                >
-                  <Text
-                    style={
-                      styles.price
-                    }
-                  >
-                    ₹
-                    {
-                      item
-                        .productId
-                        .price
-                    }
-                  </Text>
-
-                  <Text
-                    style={
-                      styles.discount
-                    }
-                  >
-                    {
-                      item
-                        .productId
-                        .discount
-                    }
-                  </Text>
-                </View>
-              </View>
-
-              <TouchableOpacity
-                style={
-                  styles.removeButton
-                }
-                onPress={() =>
-                  handledelete(
-                    item._id
-                  )
-                }
-              >
-                <Trash2
-                  size={24}
-                  color={
-                    theme.primary
-                  }
-                />
-              </TouchableOpacity>
-            </View>
-          )
-        )}
+      <Text>{item.productId.brand}</Text>
+      <Text>{item.productId.name}</Text>
+    </TouchableOpacity>
+  );
+})}
       </ScrollView>
     </View>
   );
