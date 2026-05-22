@@ -23,7 +23,6 @@ app.use("/bag", require("./routes/Bagroutes"));
 app.use("/order", require("./routes/OrderRoutes"));
 app.use("/recent", require("./routes/Recentroutes"));
 app.use("/recommend", require("./routes/Recommendationroutes"));
-app.use("/transaction", require("./routes/Transactionroutes"));
 
 app.get("/", (req, res) => {
   res.send("Backend running");
