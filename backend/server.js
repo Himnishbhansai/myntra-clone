@@ -20,7 +20,7 @@ app.use("/product", require("./routes/Productroutes"));
 app.use("/category", require("./routes/Categoryroutes"));
 app.use("/wishlist", require("./routes/Wishlistroutes"));
 app.use("/bag", require("./routes/Bagroutes"));
-app.use("/order", require("./routes/Orderroutes"));
+app.use("/order", require("./routes/OrderRoutes"));
 app.use("/recent", require("./routes/Recentroutes"));
 app.use("/recommend", require("./routes/Recommendationroutes"));
 app.use("/transaction", require("./routes/Transactionroutes"));
