@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const Transaction = require("../models/Transaction");
 const { Parser } = require("json2csv");
+const PDFDocument = require("pdfkit");
 
 // ✅ CREATE TRANSACTION (we’ll call this from order)
 router.post("/", async (req, res) => {
@@ -81,6 +82,83 @@ router.get("/export/:userId", async (req, res) => {
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: "Error exporting CSV" });
+  }
+});
+
+// 🔥 DOWNLOAD RECEIPT (PDF)
+router.get("/receipt/:id", async (req, res) => {
+  try {
+    const transaction = await Transaction.findById(req.params.id);
+
+    if (!transaction) {
+      return res.status(404).json({ message: "Transaction not found" });
+    }
+
+    const doc = new PDFDocument();
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=receipt-${transaction.invoiceId}.pdf`
+    );
+
+    doc.pipe(res);
+
+    // 🎨 CONTENT
+    doc.fontSize(20).text("Payment Receipt", { align: "center" });
+    doc.moveDown();
+
+    doc.fontSize(14).text(`Invoice ID: ${transaction.invoiceId}`);
+    doc.text(`Amount: ₹${transaction.amount}`);
+    doc.text(`Status: ${transaction.status}`);
+    doc.text(`Payment Method: ${transaction.paymentMethod}`);
+    doc.text(
+      `Date: ${new Date(transaction.createdAt).toLocaleString()}`
+    );
+
+    doc.moveDown();
+    doc.text("Thank you for your purchase ❤️");
+
+    doc.end();
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Error generating receipt" });
+  }
+});
+
+router.post("/", async (req, res) => {
+  try {
+    const { userId, amount, paymentMethod, paymentId } = req.body;
+
+    // 🔥 check if already exists
+    const existing = await Transaction.findOne({ paymentId });
+
+    if (existing) {
+      return res.json(existing); // ✅ prevent duplicate
+    }
+
+    const invoiceId = "INV-" + Date.now();
+
+    const newTransaction = await Transaction.create({
+      userId,
+      amount,
+      paymentMethod,
+      paymentId,
+      status: "success",
+      invoiceId,
+      logs: [
+        {
+          status: "success",
+          message: "Transaction created",
+          timestamp: new Date(),
+        },
+      ],
+    });
+
+    res.json(newTransaction);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Error creating transaction" });
   }
 });
 

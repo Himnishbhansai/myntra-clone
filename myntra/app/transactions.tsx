@@ -40,22 +40,15 @@ export default function Transactions() {
     return <ActivityIndicator size="large" color="#ff3f6c" />;
 
   return (
-    <ScrollView
-      style={{
-        flex: 1,
-        backgroundColor: "#121212",
-        padding: 20,
-      }}
-    >
+    <ScrollView style={{ flex: 1, backgroundColor: "#121212", padding: 20 }}>
+      
       {/* 🔥 HEADER */}
-      <Text
-        style={{
-          color: "#fff",
-          fontSize: 26,
-          fontWeight: "bold",
-          marginBottom: 15,
-        }}
-      >
+      <Text style={{
+        color: "#fff",
+        fontSize: 26,
+        fontWeight: "bold",
+        marginBottom: 15,
+      }}>
         💳 My Transactions
       </Text>
 
@@ -66,12 +59,31 @@ export default function Transactions() {
           backgroundColor: "#ff3f6c",
           padding: 12,
           borderRadius: 10,
-          marginBottom: 20,
+          marginBottom: 15,
           alignItems: "center",
         }}
       >
         <Text style={{ color: "#fff", fontWeight: "600" }}>
           View Orders →
+        </Text>
+      </TouchableOpacity>
+
+      {/* 📥 EXPORT CSV */}
+      <TouchableOpacity
+        onPress={() => {
+          const url = `https://myntra-clone-7tse.onrender.com/transaction/export/${user._id}`;
+          window.open(url);
+        }}
+        style={{
+          backgroundColor: "#00bcd4",
+          padding: 12,
+          borderRadius: 10,
+          marginBottom: 20,
+          alignItems: "center",
+        }}
+      >
+        <Text style={{ color: "#fff", fontWeight: "600" }}>
+          Export CSV ↓
         </Text>
       </TouchableOpacity>
 
@@ -90,28 +102,24 @@ export default function Transactions() {
             }}
           >
             {/* 💰 AMOUNT */}
-            <Text
-              style={{
-                color: "#fff",
-                fontSize: 18,
-                fontWeight: "bold",
-              }}
-            >
+            <Text style={{
+              color: "#fff",
+              fontSize: 18,
+              fontWeight: "bold",
+            }}>
               ₹{item.amount}
             </Text>
 
             {/* 📊 STATUS */}
-            <Text
-              style={{
-                color:
-                  item.status === "success"
-                    ? "#00e676"
-                    : item.status === "failed"
-                    ? "#ff5252"
-                    : "#ffb300",
-                marginTop: 5,
-              }}
-            >
+            <Text style={{
+              color:
+                item.status === "success"
+                  ? "#00e676"
+                  : item.status === "failed"
+                  ? "#ff5252"
+                  : "#ffb300",
+              marginTop: 5,
+            }}>
               Status: {item.status}
             </Text>
 
@@ -125,27 +133,42 @@ export default function Transactions() {
               {new Date(item.createdAt).toLocaleString()}
             </Text>
 
+            {/* 🧾 DOWNLOAD PDF */}
+            <TouchableOpacity
+              onPress={() => {
+                const url = `https://myntra-clone-7tse.onrender.com/transaction/receipt/${item._id}`;
+                window.open(url);
+              }}
+              style={{
+                marginTop: 10,
+                backgroundColor: "#673ab7",
+                padding: 8,
+                borderRadius: 6,
+                alignItems: "center",
+              }}
+            >
+              <Text style={{ color: "#fff", fontSize: 12 }}>
+                Download Receipt 📄
+              </Text>
+            </TouchableOpacity>
+
             {/* 🔥 LOGS / TIMELINE */}
             {item.logs && item.logs.length > 0 && (
-              <View
-                style={{
-                  marginTop: 10,
-                  paddingLeft: 10,
-                  borderLeftWidth: 2,
-                  borderLeftColor: "#ff3f6c",
-                }}
-              >
+              <View style={{
+                marginTop: 10,
+                paddingLeft: 10,
+                borderLeftWidth: 2,
+                borderLeftColor: "#ff3f6c",
+              }}>
                 {item.logs.map((log: any, index: number) => (
                   <View key={index} style={{ marginBottom: 8 }}>
                     <Text style={{ color: "#fff", fontSize: 13 }}>
                       • {log.status} - {log.message}
                     </Text>
-                    <Text
-                      style={{
-                        color: "#888",
-                        fontSize: 11,
-                      }}
-                    >
+                    <Text style={{
+                      color: "#888",
+                      fontSize: 11,
+                    }}>
                       {new Date(log.timestamp).toLocaleString()}
                     </Text>
                   </View>

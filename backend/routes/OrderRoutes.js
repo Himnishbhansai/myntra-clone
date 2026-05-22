@@ -113,6 +113,13 @@ router.post("/create/:userId", async (req, res) => {
     // ✅ CREATE TRANSACTION AUTOMATICALLY
 await newOrder.save();
 
+await axios.post("https://myntra-clone-7tse.onrender.com/transaction", {
+  userId: userid,
+  amount: total,
+  paymentMethod: req.body.paymentMethod,
+  paymentId: "PAY-" + Date.now(), // 🔥 unique id
+});
+
 // 🔥 ADD THIS HERE
 await Transaction.create({
   userId: userid,

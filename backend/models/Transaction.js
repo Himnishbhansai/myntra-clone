@@ -30,6 +30,11 @@ const transactionSchema = new mongoose.Schema(
       required: true,
     },
 
+    paymentId: {
+      type: String,
+      unique: true, // 🔥 prevents duplicates
+    },
+
     // 🔥 audit log
     logs: [
       {
