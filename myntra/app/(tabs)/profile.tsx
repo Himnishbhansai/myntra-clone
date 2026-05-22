@@ -31,6 +31,7 @@ const { width } = Dimensions.get("window");
 const menuItems = [
   { icon: Package, label: "Orders", route: "/orders" },
   { icon: Heart, label: "Wishlist", route: "/wishlist" },
+  { icon: CreditCard, label: "Transactions", route: "/transactions" },
   { icon: MapPin, label: "Addresses", route: "/addresses" },
   { icon: Settings, label: "Settings", route: "/settings" },
 ];

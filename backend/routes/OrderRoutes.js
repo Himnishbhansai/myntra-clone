@@ -1,6 +1,7 @@
 const express = require("express");
 const Bag = require("../models/Bag");
 const Order = require("../models/Order");
+const Transaction = require("../models/Transaction"); // ✅ ADD THIS
 
 const router = express.Router();
 
@@ -108,6 +109,13 @@ router.post("/create/:userId", async (req, res) => {
 
     await newOrder.save();
 
+    // ✅🔥 CREATE TRANSACTION (THIS IS THE KEY PART)
+    await Transaction.create({
+      userId: userid,
+      amount: total,
+      status: "success",
+    });
+
     // 🧹 CLEAR CART
     await Bag.deleteMany({
       userId: userid,
@@ -119,7 +127,7 @@ router.post("/create/:userId", async (req, res) => {
       order: newOrder,
     });
   } catch (error) {
-    console.log(error);
+    console.log("ORDER ERROR:", error); // 👈 important for debugging
     return res.status(500).json({ message: "Something went wrong" });
   }
 });
