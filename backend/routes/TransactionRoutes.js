@@ -57,8 +57,6 @@ router.get("/:userId", async (req, res) => {
   }
 });
 
-const { Parser } = require("json2csv");
-
 // ✅ EXPORT CSV
 router.get("/export/:userId", async (req, res) => {
   try {
