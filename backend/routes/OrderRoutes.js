@@ -1,7 +1,7 @@
 const express = require("express");
 const Bag = require("../models/Bag");
 const Order = require("../models/Order");
-const Transaction = require("../models/Transaction"); // ✅ ADD THIS
+const Transaction = require("../models/Transaction");
 
 const router = express.Router();
 
@@ -110,11 +110,29 @@ router.post("/create/:userId", async (req, res) => {
     await newOrder.save();
 
     // ✅🔥 CREATE TRANSACTION (THIS IS THE KEY PART)
-    await Transaction.create({
-      userId: userid,
-      amount: total,
+    // ✅ CREATE TRANSACTION AUTOMATICALLY
+await newOrder.save();
+
+// 🔥 ADD THIS HERE
+await Transaction.create({
+  userId: userid,
+  amount: total,
+  paymentMethod: req.body.paymentMethod,
+  status: "success",
+  invoiceId: "INV-" + Date.now(),
+  logs: [
+    {
+      status: "created",
+      message: "Transaction initiated",
+      timestamp: new Date(),
+    },
+    {
       status: "success",
-    });
+      message: "Payment successful",
+      timestamp: new Date(),
+    },
+  ],
+});
 
     // 🧹 CLEAR CART
     await Bag.deleteMany({
