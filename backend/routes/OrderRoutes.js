@@ -108,15 +108,6 @@ router.post("/create/:userId", async (req, res) => {
 
     await newOrder.save();
 
-    // ✅🔥 CREATE TRANSACTION (THIS WAS MISSING)
-    await Transaction.create({
-      userId: userid,
-      amount: total,
-      status: "success",
-      paymentMethod: req.body.paymentMethod,
-      invoiceId: "INV-" + Date.now(),
-    });
-
     // 🧹 CLEAR CART
     await Bag.deleteMany({
       userId: userid,
