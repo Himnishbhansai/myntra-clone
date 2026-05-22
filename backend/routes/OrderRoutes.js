@@ -1,6 +1,8 @@
 const express = require("express");
 const Bag = require("../models/Bag");
 const Order = require("../models/Order");
+const Transaction = require("../models/Transaction"); // ✅ ADDED
+
 const router = express.Router();
 
 function genrateRandomTracking() {
@@ -43,7 +45,7 @@ function genrateRandomTracking() {
   };
 }
 
-// ✅ UPDATED CHECKOUT (PRODUCTION SAFE)
+// ✅ CHECKOUT
 router.post("/create/:userId", async (req, res) => {
   try {
     const userid = req.params.userId;
@@ -80,7 +82,7 @@ router.post("/create/:userId", async (req, res) => {
       }
     }
 
-    // ✅ CREATE ORDER ITEMS
+    // ✅ ORDER ITEMS
     const orderItems = bag.map((item) => ({
       productId: item.productId._id,
       size: item.size,
@@ -88,7 +90,7 @@ router.post("/create/:userId", async (req, res) => {
       quantity: item.quantity,
     }));
 
-    // ✅ FIXED TOTAL
+    // ✅ TOTAL
     const total = orderItems.reduce(
       (sum, item) => sum + item.price * item.quantity,
       0
@@ -98,7 +100,7 @@ router.post("/create/:userId", async (req, res) => {
       userId: userid,
       date: new Date().toISOString(),
       status: "Processing",
-      items: orderItems, // ✅ FIXED
+      items: orderItems,
       total: total,
       shippingAddress: req.body.shippingAddress,
       paymentMethod: req.body.paymentMethod,
@@ -107,7 +109,16 @@ router.post("/create/:userId", async (req, res) => {
 
     await newOrder.save();
 
-    // 🧹 CLEAR ONLY ACTIVE CART
+    // ✅🔥 CREATE TRANSACTION (THIS WAS MISSING)
+    await Transaction.create({
+      userId: userid,
+      amount: total,
+      status: "success",
+      paymentMethod: req.body.paymentMethod,
+      invoiceId: "INV-" + Date.now(),
+    });
+
+    // 🧹 CLEAR CART
     await Bag.deleteMany({
       userId: userid,
       savedForLater: false,
