@@ -161,6 +161,7 @@ export default function Bag() {
 
             {cartItems.map((item) => {
               const status = getStatus(item);
+              console.log("CHECK 👉", item.productId);
 
               return (
                 <View key={item._id} style={styles.bagItem}>
