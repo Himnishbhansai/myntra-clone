@@ -8,108 +8,52 @@ router.get("/test", (req, res) => {
   res.send("Recent route working");
 });
 
-// ✅ ADD / MERGE RECENTS (SINGLE + BULK SUPPORT)
+// ✅ ADD / UPDATE RECENT (IDEMPOTENT + LIMIT 20)
 router.post("/", async (req, res) => {
   try {
-    const { userId, productId, products } = req.body;
+    const { userId, productId } = req.body;
 
-    if (!userId) {
-      return res.status(400).json({ message: "Missing userId" });
+    if (!userId || !productId) {
+      return res.status(400).json({ message: "Missing fields" });
     }
 
-    // ================================
-    // 🔥 CASE 1: BULK MERGE (LOGIN)
-    // ================================
-    if (products && Array.isArray(products)) {
-      for (let item of products) {
-        if (!item.productId) continue;
+    // 🔥 REMOVE DUPLICATE (if exists)
+    await Recent.findOneAndDelete({ userId, productId });
 
-        await Recent.findOneAndDelete({
-          userId,
-          productId: item.productId,
-        });
+    // ✅ CREATE NEW (latest)
+    await Recent.create({
+      userId,
+      productId,
+      createdAt: new Date(),
+    });
 
-        await Recent.create({
-          userId,
-          productId: item.productId,
-          createdAt: item.viewedAt || new Date(),
-        });
-      }
-    }
-
-    // ================================
-    // 🔥 CASE 2: SINGLE ADD (WORKING)
-    // ================================
-    else if (productId) {
-      await Recent.findOneAndDelete({ userId, productId });
-
-      await Recent.create({
-        userId,
-        productId,
-        createdAt: new Date(),
-      });
-    }
-
-    else {
-      return res.status(400).json({
-        message: "Provide productId or products array",
-      });
-    }
-
-    // ================================
-    // 🔥 REMOVE DUPLICATES (FINAL CLEANUP)
-    // ================================
+    // 🔥 ENFORCE MAX 20 (IMPORTANT FOR TASK)
     const allRecents = await Recent.find({ userId })
       .sort({ createdAt: -1 });
 
-    const seen = new Set();
-    const duplicates = [];
-
-    for (let item of allRecents) {
-      const key = item.productId.toString();
-
-      if (seen.has(key)) {
-        duplicates.push(item._id);
-      } else {
-        seen.add(key);
-      }
-    }
-
-    if (duplicates.length > 0) {
-      await Recent.deleteMany({ _id: { $in: duplicates } });
-    }
-
-    // ================================
-    // 🔥 ENFORCE MAX 20
-    // ================================
-    const finalRecents = await Recent.find({ userId })
-      .sort({ createdAt: -1 });
-
-    if (finalRecents.length > 20) {
-      const extra = finalRecents.slice(20);
+    if (allRecents.length > 20) {
+      const extra = allRecents.slice(20); // beyond 20
       const idsToDelete = extra.map((item) => item._id);
 
-      await Recent.deleteMany({
-        _id: { $in: idsToDelete },
-      });
+      await Recent.deleteMany({ _id: { $in: idsToDelete } });
     }
 
     res.json({ message: "Recent updated" });
 
   } catch (err) {
-    console.log("RECENT ERROR:", err);
-    res.status(500).json({ message: "Error updating recents" });
+    console.log("ADD RECENT ERROR:", err);
+    res.status(500).json({ message: "Error adding recent" });
   }
 });
 
-// ✅ GET RECENTS
+// ✅ GET RECENTS (SORTED + POPULATED)
 router.get("/:userId", async (req, res) => {
   try {
     const recents = await Recent.find({
       userId: req.params.userId,
     })
-      .sort({ createdAt: -1 })
-      .limit(20)
+      .sort({ createdAt: -1 }) // latest first
+      .limit(20) // ✅ strict limit
       .populate("productId");
 
     res.json(recents);
