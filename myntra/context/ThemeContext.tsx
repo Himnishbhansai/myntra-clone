@@ -4,37 +4,46 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const ThemeContext = createContext<any>(null);
 
-const lightTheme = {
-  background: "#ffffff",
-  text: "#111",
-  card: "#f5f5f5",
-  border: "#ddd",
-  primary: "#ff3f6c",
-  secondaryText: "#666",
-};
-
-const darkTheme = {
-  background: "#121212",
-  text: "#fff",
-  card: "#1e1e1e",
-  border: "#333",
-  primary: "#ff3f6c",
-  secondaryText: "#aaa",
+// 🔥 CENTRALIZED THEMES (SCALABLE)
+const themes = {
+  light: {
+    background: "#ffffff",
+    text: "#111",
+    card: "#f5f5f5",
+    border: "#ddd",
+    primary: "#ff3f6c",
+    secondaryText: "#666",
+  },
+  dark: {
+    background: "#121212",
+    text: "#fff",
+    card: "#1e1e1e",
+    border: "#333",
+    primary: "#ff3f6c",
+    secondaryText: "#aaa",
+  },
 };
 
 export const ThemeProvider = ({ children }: any) => {
-  const [mode, setMode] = useState<"light" | "dark" | "system">("system");
+  const [mode, setMode] = useState<"light" | "dark">("light");
   const [accent, setAccent] = useState("#ff3f6c");
   const [isReady, setIsReady] = useState(false);
 
-  // 🔥 LOAD SAVED THEME (FIRST LAUNCH LOGIC)
+  // 🔥 FIRST LAUNCH + SYSTEM DETECTION
   useEffect(() => {
     const loadTheme = async () => {
       try {
         const savedMode = await AsyncStorage.getItem("themeMode");
         const savedAccent = await AsyncStorage.getItem("accentColor");
 
-        if (savedMode) setMode(savedMode as any);
+        if (savedMode) {
+          setMode(savedMode as "light" | "dark");
+        } else {
+          // ✅ auto-detect system theme ONLY if no saved preference
+          const systemTheme = Appearance.getColorScheme();
+          setMode(systemTheme === "dark" ? "dark" : "light");
+        }
+
         if (savedAccent) setAccent(savedAccent);
       } catch (e) {
         console.log("Theme load error", e);
@@ -48,26 +57,24 @@ export const ThemeProvider = ({ children }: any) => {
 
   // 🔥 SAVE MODE
   useEffect(() => {
-    AsyncStorage.setItem("themeMode", mode);
-  }, [mode]);
+    if (isReady) {
+      AsyncStorage.setItem("themeMode", mode);
+    }
+  }, [mode, isReady]);
 
   // 🔥 SAVE ACCENT
   useEffect(() => {
-    AsyncStorage.setItem("accentColor", accent);
-  }, [accent]);
+    if (isReady) {
+      AsyncStorage.setItem("accentColor", accent);
+    }
+  }, [accent, isReady]);
 
-  // 🔥 SYSTEM THEME DETECTION
-  const systemTheme = Appearance.getColorScheme();
+  // 🔥 ACTIVE THEME
+  const baseTheme = themes[mode];
 
-  const activeMode =
-    mode === "system" ? systemTheme : mode;
-
-  const theme =
-    activeMode === "dark" ? darkTheme : lightTheme;
-
-  // 🔥 APPLY ACCENT
+  // 🔥 APPLY ACCENT (DYNAMIC PRIMARY COLOR)
   const finalTheme = {
-    ...theme,
+    ...baseTheme,
     primary: accent,
   };
 
