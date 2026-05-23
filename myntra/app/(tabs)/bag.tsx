@@ -1,5 +1,3 @@
-// 🔥 FULL FIXED BAG SCREEN
-
 import {
   View,
   Text,
@@ -28,7 +26,7 @@ export default function Bag() {
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [savedItems, setSavedItems] = useState<any[]>([]);
 
-  // 🔥 MERGE DUPLICATES FUNCTION
+  // 🔥 MERGE DUPLICATES (frontend safety)
   const mergeDuplicates = (items: any[]) => {
     const map = new Map();
 
@@ -58,7 +56,6 @@ export default function Bag() {
       const active = res.data.filter((i: any) => !i.savedForLater);
       const saved = res.data.filter((i: any) => i.savedForLater);
 
-      // 🔥 MERGE HERE
       setCartItems(mergeDuplicates(active));
       setSavedItems(mergeDuplicates(saved));
     } catch (err) {
@@ -73,14 +70,16 @@ export default function Bag() {
     fetchCart();
   }, [user]);
 
-  // ✅ STATUS LOGIC
+  // ✅ STATUS LOGIC (IMPROVED)
   const getStatus = (item: any) => {
     const product = item.productId;
 
     if (!product) return "Removed";
 
-    if (product.stock !== undefined && item.quantity > product.stock) {
-      return "Out of Stock";
+    if (product.stock !== undefined) {
+      if (item.quantity > product.stock) {
+        return `Only ${product.stock} left`;
+      }
     }
 
     if (
@@ -94,15 +93,14 @@ export default function Bag() {
     return null;
   };
 
-  // 🔥 SMART QUANTITY UPDATE
+  // 🔥 SMART QUANTITY
   const updateQuantity = async (item: any, newQty: number) => {
     if (newQty < 1) return;
 
     const stock = item.productId?.stock;
 
-    // ❌ BLOCK API if exceeding stock (NO ERROR NOW)
+    // ❌ don't hit backend if exceeding
     if (stock !== undefined && newQty > stock) {
-      // just update UI by forcing re-render
       setCartItems((prev) =>
         prev.map((i) =>
           i._id === item._id ? { ...i, quantity: newQty } : i
@@ -145,7 +143,11 @@ export default function Bag() {
     }
   };
 
+  // 🔥 DISABLE CHECKOUT IF INVALID
+  const hasInvalidItems = cartItems.some((item) => getStatus(item));
+
   const handleCheckout = () => {
+    if (hasInvalidItems) return;
     router.push("/checkout");
   };
 
@@ -229,14 +231,13 @@ export default function Bag() {
                         item.productId?.price}
                     </Text>
 
-                    {/* 🔥 STATUS */}
                     {status && (
                       <Text style={{ color: "red", fontSize: 12 }}>
                         {status}
                       </Text>
                     )}
 
-                    {/* 🔥 ALWAYS ALLOW - BUTTON */}
+                    {/* 🔥 ALWAYS ALLOW - */}
                     <View style={styles.quantityContainer}>
                       <TouchableOpacity
                         style={styles.quantityButton}
@@ -251,7 +252,6 @@ export default function Bag() {
                         {item.quantity}
                       </Text>
 
-                      {/* 🔥 BLOCK + ONLY */}
                       <TouchableOpacity
                         style={styles.quantityButton}
                         onPress={() =>
@@ -284,17 +284,20 @@ export default function Bag() {
         )}
       </ScrollView>
 
+      {/* FOOTER */}
       <View style={styles.footer}>
         <View style={styles.totalContainer}>
-          <Text style={styles.totalLabel}>
-            Total Amount
-          </Text>
+          <Text style={styles.totalLabel}>Total Amount</Text>
           <Text style={styles.totalAmount}>₹{total}</Text>
         </View>
 
         <TouchableOpacity
-          style={styles.checkoutButton}
+          style={[
+            styles.checkoutButton,
+            hasInvalidItems && { opacity: 0.5 },
+          ]}
           onPress={handleCheckout}
+          disabled={hasInvalidItems}
         >
           <Text style={styles.checkoutButtonText}>
             PLACE ORDER
@@ -336,6 +339,26 @@ const createStyles = (theme: any) =>
       fontWeight: "bold",
       color: theme.text,
       marginBottom: 10,
+    },
+    emptyState: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    emptyTitle: {
+      fontSize: 18,
+      marginVertical: 20,
+      color: theme.text,
+    },
+    loginButton: {
+      backgroundColor: theme.primary,
+      paddingHorizontal: 40,
+      paddingVertical: 15,
+      borderRadius: 10,
+    },
+    loginButtonText: {
+      color: "#fff",
+      fontWeight: "bold",
     },
     bagItem: {
       flexDirection: "row",
