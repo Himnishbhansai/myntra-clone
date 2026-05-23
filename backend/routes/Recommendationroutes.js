@@ -1,69 +1,68 @@
-const express = require("express");
-const router = express.Router();
-const Product = require("../models/Product");
-
-// 🔥 SMART RECOMMENDATION ENGINE
-router.get("/:productId", async (req, res) => {
+router.get("/:userId/:productId", async (req, res) => {
   try {
-    const productId = req.params.productId;
+    const { userId, productId } = req.params;
 
     const currentProduct = await Product.findById(productId);
-
     if (!currentProduct) {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    const { category, price, name } = currentProduct;
+    const category = currentProduct.category;
 
-    // 🔥 extract keywords (item type)
-    const keywords = name.split(" ");
+    // 🔥 A = RECENTLY VIEWED
+    const recent = await Recent.find({ userId })
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .populate("productId");
 
-    // 🔥 1. SIMILAR TYPE (name match)
-    let recommendations = await Product.find({
+    const A = recent
+      .map((r) => r.productId)
+      .filter(Boolean);
+
+    // 🔥 B = WISHLIST
+    const wishlist = await Wishlist.find({ userId }).populate("productId");
+
+    const B = wishlist
+      .map((w) => w.productId)
+      .filter(Boolean);
+
+    // 🔥 C = SAME CATEGORY PRODUCTS
+    const C = await Product.find({
+      category,
       _id: { $ne: productId },
-      name: { $regex: keywords[0], $options: "i" }, // loose match
-    }).limit(6);
+    });
 
-    // 🔥 2. SIMILAR PRICE RANGE (±300)
-    if (recommendations.length < 6) {
-      const existingIds = recommendations.map((p) => p._id);
+    // 🔥 A ∩ C
+    const A_ids = new Set(A.map((p) => p._id.toString()));
+    const A_intersect_C = C.filter((p) =>
+      A_ids.has(p._id.toString())
+    );
 
-      const priceBased = await Product.find({
-        _id: { $ne: productId, $nin: existingIds },
-        price: { $gte: price - 300, $lte: price + 300 },
-      }).limit(6 - recommendations.length);
+    // 🔥 B ∪ (A ∩ C)
+    const map = new Map();
 
-      recommendations = [...recommendations, ...priceBased];
-    }
+    [...B, ...A_intersect_C].forEach((p) => {
+      if (p && p._id.toString() !== productId) {
+        map.set(p._id.toString(), p);
+      }
+    });
 
-    // 🔥 3. SAME CATEGORY (fallback)
-    if (recommendations.length < 6) {
-      const existingIds = recommendations.map((p) => p._id);
+    let recommendations = Array.from(map.values());
 
-      const categoryBased = await Product.find({
-        _id: { $ne: productId, $nin: existingIds },
-        category,
-      }).limit(6 - recommendations.length);
-
-      recommendations = [...recommendations, ...categoryBased];
-    }
-
-    // 🔥 4. FINAL FALLBACK (anything)
-    if (recommendations.length < 6) {
+    // 🔥 LIMIT + FALLBACK
+    if (recommendations.length < 10) {
       const existingIds = recommendations.map((p) => p._id);
 
       const fallback = await Product.find({
         _id: { $ne: productId, $nin: existingIds },
-      }).limit(6 - recommendations.length);
+      }).limit(10 - recommendations.length);
 
       recommendations = [...recommendations, ...fallback];
     }
 
-    res.status(200).json(recommendations);
+    res.json(recommendations.slice(0, 10));
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Error fetching recommendations" });
   }
 });
-
-module.exports = router;
