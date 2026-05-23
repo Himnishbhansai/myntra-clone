@@ -1,223 +1,91 @@
-import React,{
-createContext,
-useContext,
-useEffect,
-useMemo,
-useState
-} from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { Appearance } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import AsyncStorage
-from "@react-native-async-storage/async-storage";
+const ThemeContext = createContext<any>(null);
 
-import {Appearance}
-from "react-native";
-
-import {
-baseThemes,
-defaultAccent,
-ThemeMode,
-createSystemTheme
-}
-from "../theme/theme";
-
-type ThemeContextType={
-
-mode:ThemeMode;
-
-setMode:(
-mode:ThemeMode
-)=>void;
-
-accent:string;
-
-setAccent:(
-color:string
-)=>void;
-
-theme:{
-background:string;
-card:string;
-text:string;
-secondaryText:string;
-border:string;
-primary:string;
+const lightTheme = {
+  background: "#ffffff",
+  text: "#111",
+  card: "#f5f5f5",
+  border: "#ddd",
+  primary: "#ff3f6c",
+  secondaryText: "#666",
 };
 
+const darkTheme = {
+  background: "#121212",
+  text: "#fff",
+  card: "#1e1e1e",
+  border: "#333",
+  primary: "#ff3f6c",
+  secondaryText: "#aaa",
 };
 
-const ThemeContext=
-createContext<
-ThemeContextType|undefined
->(undefined);
+export const ThemeProvider = ({ children }: any) => {
+  const [mode, setMode] = useState<"light" | "dark" | "system">("system");
+  const [accent, setAccent] = useState("#ff3f6c");
+  const [isReady, setIsReady] = useState(false);
 
-export const ThemeProvider=({
-children,
-}:{
-children:React.ReactNode;
-})=>{
+  // 🔥 LOAD SAVED THEME (FIRST LAUNCH LOGIC)
+  useEffect(() => {
+    const loadTheme = async () => {
+      try {
+        const savedMode = await AsyncStorage.getItem("themeMode");
+        const savedAccent = await AsyncStorage.getItem("accentColor");
 
-const[
-mode,
-setModeState
-]=useState<ThemeMode>(
-"system"
-);
+        if (savedMode) setMode(savedMode as any);
+        if (savedAccent) setAccent(savedAccent);
+      } catch (e) {
+        console.log("Theme load error", e);
+      } finally {
+        setIsReady(true);
+      }
+    };
 
-const[
-accent,
-setAccentState
-]=useState(
-defaultAccent
-);
+    loadTheme();
+  }, []);
 
-const deviceTheme=
-Appearance.getColorScheme()
-==="dark"
-?"dark"
-:"light";
+  // 🔥 SAVE MODE
+  useEffect(() => {
+    AsyncStorage.setItem("themeMode", mode);
+  }, [mode]);
 
-useEffect(()=>{
+  // 🔥 SAVE ACCENT
+  useEffect(() => {
+    AsyncStorage.setItem("accentColor", accent);
+  }, [accent]);
 
-const loadTheme=
-async()=>{
+  // 🔥 SYSTEM THEME DETECTION
+  const systemTheme = Appearance.getColorScheme();
 
-try{
+  const activeMode =
+    mode === "system" ? systemTheme : mode;
 
-const savedMode=
-await AsyncStorage.getItem(
-"themeMode"
-);
+  const theme =
+    activeMode === "dark" ? darkTheme : lightTheme;
 
-const savedAccent=
-await AsyncStorage.getItem(
-"accent"
-);
+  // 🔥 APPLY ACCENT
+  const finalTheme = {
+    ...theme,
+    primary: accent,
+  };
 
-if(savedMode){
+  if (!isReady) return null; // prevent flicker
 
-setModeState(
-savedMode as ThemeMode
-);
-
-}
-
-if(savedAccent){
-
-setAccentState(
-savedAccent
-);
-
-}
-
-}catch(err){
-
-console.log(
-"Theme load error",
-err
-);
-
-}
-
+  return (
+    <ThemeContext.Provider
+      value={{
+        theme: finalTheme,
+        mode,
+        setMode,
+        accent,
+        setAccent,
+      }}
+    >
+      {children}
+    </ThemeContext.Provider>
+  );
 };
 
-loadTheme();
-
-},[]);
-
-const setMode=
-async(
-value:ThemeMode
-)=>{
-
-setModeState(
-value
-);
-
-await AsyncStorage.setItem(
-"themeMode",
-value
-);
-
-};
-
-const setAccent=
-async(
-color:string
-)=>{
-
-setAccentState(
-color
-);
-
-await AsyncStorage.setItem(
-"accent",
-color
-);
-
-};
-
-const currentTheme=
-mode==="system"
-?deviceTheme
-:mode;
-
-const theme=
-useMemo(()=>{
-
-if(mode==="light"){
-return baseThemes.light;
-}
-
-if(mode==="dark"){
-return baseThemes.dark;
-}
-
-return createSystemTheme(
-accent
-);
-
-},
-[
-mode,
-accent,
-currentTheme
-]);
-
-return(
-
-<ThemeContext.Provider
-value={{
-mode,
-setMode,
-accent,
-setAccent,
-theme
-}}
->
-
-{children}
-
-</ThemeContext.Provider>
-
-);
-
-};
-
-export const useTheme=()=>{
-
-const context=
-useContext(
-ThemeContext
-);
-
-if(!context){
-
-throw new Error(
-"useTheme must be used inside ThemeProvider"
-);
-
-}
-
-return context;
-
-};
+export const useTheme = () => useContext(ThemeContext);
