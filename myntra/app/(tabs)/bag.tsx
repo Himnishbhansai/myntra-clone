@@ -103,7 +103,8 @@ export default function Bag() {
         (item: any) =>
           item.priceAtAdd && item.productId?.price !== item.priceAtAdd
       );
-
+     
+      
       if (hasPriceChange) {
         Alert.alert(
           "Price Updated",
