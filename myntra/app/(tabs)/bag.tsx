@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  Alert,
 } from "react-native";
 
 import { useRouter } from "expo-router";
@@ -16,8 +15,6 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import axios from "axios";
 import { useTheme } from "@/context/ThemeContext";
-
-// ...imports unchanged
 
 export default function Bag() {
   const router = useRouter();
@@ -56,12 +53,25 @@ export default function Bag() {
     fetchCart();
   }, [user]);
 
-  // ✅ STATUS LOGIC (NEW)
+  // ✅ STATUS LOGIC (FIXED)
   const getStatus = (item: any) => {
-    if (!item.productId) return "Removed";
-    if (item.productId.stock < item.quantity) return "Out of Stock";
-    if (item.priceAtAdd && item.productId.price !== item.priceAtAdd)
+    const product = item.productId;
+
+    if (!product) return "Removed";
+
+    // 🔥 IMPORTANT: stock may be undefined
+    if (product.stock !== undefined && product.stock < item.quantity) {
+      return "Out of Stock";
+    }
+
+    if (
+      item.priceAtAdd &&
+      product.price &&
+      product.price !== item.priceAtAdd
+    ) {
       return "Price Changed";
+    }
+
     return null;
   };
 
@@ -102,7 +112,6 @@ export default function Bag() {
     }
   };
 
-  // ✅ CLEAN CHECKOUT (NO BLOCKING)
   const handleCheckout = () => {
     router.push("/checkout");
   };
@@ -161,7 +170,6 @@ export default function Bag() {
 
             {cartItems.map((item) => {
               const status = getStatus(item);
-              console.log("CHECK 👉", item.productId);
 
               return (
                 <View key={item._id} style={styles.bagItem}>
@@ -189,7 +197,7 @@ export default function Bag() {
                         item.productId?.price}
                     </Text>
 
-                    {/* 🔥 STATUS UI */}
+                    {/* 🔥 STATUS */}
                     {status && (
                       <Text
                         style={{
@@ -202,7 +210,7 @@ export default function Bag() {
                       </Text>
                     )}
 
-                    {/* 🔥 DISABLE IF INVALID */}
+                    {/* 🔥 ONLY ALLOW QTY CHANGE IF VALID */}
                     {!status && (
                       <View style={styles.quantityContainer}>
                         <TouchableOpacity
@@ -261,7 +269,7 @@ export default function Bag() {
           </>
         )}
 
-        {/* SAVED (unchanged) */}
+        {/* SAVED */}
         {savedItems.length > 0 && (
           <>
             <Text style={styles.sectionTitle}>
