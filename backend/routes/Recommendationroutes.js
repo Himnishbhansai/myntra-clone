@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const Product = require("../models/Product");
 
-// 🔥 GET recommendations
+// 🔥 SMART RECOMMENDATION ENGINE
 router.get("/:productId", async (req, res) => {
   try {
     const productId = req.params.productId;
@@ -13,43 +13,56 @@ router.get("/:productId", async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    // 🔥 1. SAME CATEGORY (PRIMARY)
+    const { category, price, name } = currentProduct;
+
+    // 🔥 extract keywords (item type)
+    const keywords = name.split(" ");
+
+    // 🔥 1. SIMILAR TYPE (name match)
     let recommendations = await Product.find({
-      category: currentProduct.category,
       _id: { $ne: productId },
+      name: { $regex: keywords[0], $options: "i" }, // loose match
     }).limit(6);
 
-    // 🔥 2. FALLBACK (avoid duplicates)
+    // 🔥 2. SIMILAR PRICE RANGE (±300)
     if (recommendations.length < 6) {
       const existingIds = recommendations.map((p) => p._id);
 
-      const more = await Product.find({
+      const priceBased = await Product.find({
+        _id: { $ne: productId, $nin: existingIds },
+        price: { $gte: price - 300, $lte: price + 300 },
+      }).limit(6 - recommendations.length);
+
+      recommendations = [...recommendations, ...priceBased];
+    }
+
+    // 🔥 3. SAME CATEGORY (fallback)
+    if (recommendations.length < 6) {
+      const existingIds = recommendations.map((p) => p._id);
+
+      const categoryBased = await Product.find({
+        _id: { $ne: productId, $nin: existingIds },
+        category,
+      }).limit(6 - recommendations.length);
+
+      recommendations = [...recommendations, ...categoryBased];
+    }
+
+    // 🔥 4. FINAL FALLBACK (anything)
+    if (recommendations.length < 6) {
+      const existingIds = recommendations.map((p) => p._id);
+
+      const fallback = await Product.find({
         _id: { $ne: productId, $nin: existingIds },
       }).limit(6 - recommendations.length);
 
-      recommendations = [...recommendations, ...more];
+      recommendations = [...recommendations, ...fallback];
     }
 
     res.status(200).json(recommendations);
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Error fetching recommendations" });
-  }
-});
-
-// 📥 GET
-router.get("/:userId", async (req, res) => {
-  try {
-    const recents = await Recent.find({
-      userId: req.params.userId,
-    })
-      .sort({ createdAt: -1 })
-      .populate("productId");
-
-    res.json(recents); // ✅ send full object
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Error fetching recents" });
   }
 });
 
