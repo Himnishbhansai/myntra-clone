@@ -17,37 +17,37 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ message: "Missing userId" });
     }
 
-    let itemsToProcess = [];
-
     // ================================
     // 🔥 CASE 1: BULK MERGE (LOGIN)
     // ================================
     if (products && Array.isArray(products)) {
-      // ✅ remove duplicates in incoming data
-      const uniqueMap = new Map();
-
       for (let item of products) {
         if (!item.productId) continue;
 
-        uniqueMap.set(item.productId.toString(), {
+        await Recent.findOneAndDelete({
+          userId,
+          productId: item.productId,
+        });
+
+        await Recent.create({
+          userId,
           productId: item.productId,
           createdAt: item.viewedAt || new Date(),
         });
       }
-
-      itemsToProcess = Array.from(uniqueMap.values());
     }
 
     // ================================
-    // 🔥 CASE 2: SINGLE ADD
+    // 🔥 CASE 2: SINGLE ADD (WORKING)
     // ================================
     else if (productId) {
-      itemsToProcess = [
-        {
-          productId,
-          createdAt: new Date(),
-        },
-      ];
+      await Recent.findOneAndDelete({ userId, productId });
+
+      await Recent.create({
+        userId,
+        productId,
+        createdAt: new Date(),
+      });
     }
 
     else {
@@ -57,28 +57,37 @@ router.post("/", async (req, res) => {
     }
 
     // ================================
-    // 🔥 UPSERT (NO DUPLICATES EVER)
-    // ================================
-    for (let item of itemsToProcess) {
-      await Recent.findOneAndUpdate(
-        { userId, productId: item.productId },
-        {
-          userId,
-          productId: item.productId,
-          createdAt: item.createdAt,
-        },
-        { upsert: true, new: true }
-      );
-    }
-
-    // ================================
-    // 🔥 KEEP ONLY LATEST 20
+    // 🔥 REMOVE DUPLICATES (FINAL CLEANUP)
     // ================================
     const allRecents = await Recent.find({ userId })
       .sort({ createdAt: -1 });
 
-    if (allRecents.length > 20) {
-      const idsToDelete = allRecents.slice(20).map(i => i._id);
+    const seen = new Set();
+    const duplicates = [];
+
+    for (let item of allRecents) {
+      const key = item.productId.toString();
+
+      if (seen.has(key)) {
+        duplicates.push(item._id);
+      } else {
+        seen.add(key);
+      }
+    }
+
+    if (duplicates.length > 0) {
+      await Recent.deleteMany({ _id: { $in: duplicates } });
+    }
+
+    // ================================
+    // 🔥 ENFORCE MAX 20
+    // ================================
+    const finalRecents = await Recent.find({ userId })
+      .sort({ createdAt: -1 });
+
+    if (finalRecents.length > 20) {
+      const extra = finalRecents.slice(20);
+      const idsToDelete = extra.map((item) => item._id);
 
       await Recent.deleteMany({
         _id: { $in: idsToDelete },
