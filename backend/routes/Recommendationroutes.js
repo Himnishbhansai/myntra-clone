@@ -1,3 +1,9 @@
+const express = require("express");
+const router = express.Router();
+const Product = require("../models/Product");
+const Recent = require("../models/Recent"); // browsing history
+const Wishlist = require("../models/Wishlist"); // if you have this
+
 router.get("/:userId/:productId", async (req, res) => {
   try {
     const { userId, productId } = req.params;
@@ -66,3 +72,5 @@ router.get("/:userId/:productId", async (req, res) => {
     res.status(500).json({ message: "Error fetching recommendations" });
   }
 });
+
+module.exports = router;
