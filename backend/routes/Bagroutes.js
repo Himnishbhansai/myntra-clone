@@ -1,8 +1,9 @@
 const express = require("express");
 const Bag = require("../models/Bag");
-const Product = require("../models/Product"); // 🔥 ADD THIS
+const Product = require("../models/Product");
 const router = express.Router();
 
+// ✅ ADD TO BAG (NO DUPLICATES + HANDLE SAVED ITEMS)
 router.post("/", async (req, res) => {
   try {
     const { userId, productId, size } = req.body;
@@ -11,20 +12,39 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ message: "Missing fields" });
     }
 
-    // 🔥 CHECK IF ITEM ALREADY EXISTS (same product + size)
+    // 🔥 FIND PRODUCT (for stock safety)
+    const product = await Product.findById(productId);
+
+    if (!product) {
+      return res.status(400).json({ message: "Product not found" });
+    }
+
+    // 🔥 CHECK IF EXISTS (including saved items)
     const existingItem = await Bag.findOne({
       userId,
       productId,
       size,
-      savedForLater: false,
     });
 
     if (existingItem) {
-      // ✅ INCREMENT QUANTITY INSTEAD OF DUPLICATE
-      existingItem.quantity += 1;
+      // ✅ IF SAVED → MOVE BACK TO CART
+      if (existingItem.savedForLater) {
+        existingItem.savedForLater = false;
+      }
+
+      // 🔥 SAFE QUANTITY (DON’T EXCEED STOCK)
+      if (product.stock !== undefined) {
+        existingItem.quantity = Math.min(
+          existingItem.quantity + 1,
+          product.stock
+        );
+      } else {
+        existingItem.quantity += 1;
+      }
+
       await existingItem.save();
     } else {
-      // ✅ CREATE NEW ITEM
+      // ✅ CREATE NEW
       await Bag.create({
         userId,
         productId,
@@ -88,7 +108,7 @@ router.put("/move/:id", async (req, res) => {
   }
 });
 
-// ✅ UPDATE QUANTITY (WITH STOCK VALIDATION)
+// ✅ UPDATE QUANTITY (SMART + NO HARD ERRORS)
 router.put("/quantity/:id", async (req, res) => {
   try {
     const { quantity } = req.body;
@@ -97,22 +117,27 @@ router.put("/quantity/:id", async (req, res) => {
       return res.status(400).json({ message: "Invalid quantity" });
     }
 
-    const item = await Bag.findById(req.params.id).populate("productId", "name brand price stock images");
+    const item = await Bag.findById(req.params.id).populate(
+      "productId",
+      "name brand price stock images"
+    );
 
     if (!item || !item.productId) {
       return res.status(400).json({ message: "Item not found" });
     }
 
-    // 🔥 STOCK CHECK
-    if (item.productId.stock < quantity) {
-      return res.status(400).json({
-        message: "Not enough stock available",
-      });
+    const stock = item.productId.stock;
+
+    // 🔥 CLAMP INSTEAD OF ERROR
+    let finalQty = quantity;
+
+    if (stock !== undefined && quantity > stock) {
+      finalQty = stock; // cap it
     }
 
     const updatedItem = await Bag.findByIdAndUpdate(
       req.params.id,
-      { quantity },
+      { quantity: finalQty },
       { new: true }
     );
 
