@@ -2,7 +2,7 @@ const express = require("express");
 const Bag = require("../models/Bag");
 const Order = require("../models/Order");
 const Transaction = require("../models/Transaction");
-const Product = require("../models/Product"); // 🔥 ADD THIS
+const Product = require("../models/Product");
 
 const router = express.Router();
 
@@ -52,50 +52,59 @@ router.post("/create/:userId", async (req, res) => {
       return res.status(400).json({ message: "No item in the bag" });
     }
 
-    // 🔥 CRITICAL VALIDATION LOOP
+    // 🔥 PARTIAL CHECKOUT LOGIC
+    const validItems = [];
+    const failedItems = [];
+
     for (let item of bag) {
-      const product = await Product.findById(item.productId?._id);
+  const product = item.productId;
 
-      // ❌ DISCONTINUED PRODUCT
-      if (!product) {
-        return res.status(400).json({
-          message: `Some products are no longer available`,
-        });
-      }
+  if (!product) {
+    failedItems.push({
+      name: "Unknown product",
+      reason: "Removed",
+    });
+    continue;
+  }
 
-      // ❌ PRICE CHANGED
-      if (product.price !== item.priceAtAdd) {
-        return res.status(400).json({
-          message: `Price changed for ${product.name}`,
-        });
-      }
+  // ❌ ONLY BLOCK OUT OF STOCK
+  if (product.stock < item.quantity) {
+    failedItems.push({
+      name: product.name,
+      reason: "Out of stock",
+    });
+    continue;
+  }
 
-      // ❌ STOCK CHECK
-      if (product.stock < item.quantity) {
-        return res.status(400).json({
-          message: `Only ${product.stock} left for ${product.name}`,
-        });
-      }
+  // ✅ ALLOW price change → use locked price
+  validItems.push({
+    productId: product._id,
+    size: item.size,
+    price: item.priceAtAdd || product.price, // 🔥 KEY FIX
+    quantity: item.quantity,
+  });
+}
+
+    // ❌ nothing valid
+    if (validItems.length === 0) {
+      return res.status(400).json({
+        message: "No valid items to order",
+        failedItems,
+      });
     }
 
-    // ✅ CREATE ORDER ITEMS (use locked price)
-    const orderItems = bag.map((item) => ({
-      productId: item.productId._id,
-      size: item.size,
-      price: item.priceAtAdd, // 🔥 USE LOCKED PRICE
-      quantity: item.quantity,
-    }));
-
-    const total = orderItems.reduce(
+    // ✅ TOTAL
+    const total = validItems.reduce(
       (sum, item) => sum + item.price * item.quantity,
       0
     );
 
+    // ✅ CREATE ORDER
     const newOrder = await Order.create({
       userId: userid,
       date: new Date().toISOString(),
       status: "Processing",
-      items: orderItems,
+      items: validItems,
       total,
       shippingAddress,
       paymentMethod,
@@ -124,15 +133,22 @@ router.post("/create/:userId", async (req, res) => {
       ],
     });
 
-    // ✅ CLEAR CART
+    // 🔥 REMOVE ONLY VALID ITEMS FROM BAG
+    const validProductIds = validItems.map((i) =>
+      i.productId.toString()
+    );
+
     await Bag.deleteMany({
       userId: userid,
       savedForLater: false,
+      productId: { $in: validProductIds },
     });
 
+    // ✅ RESPONSE
     res.status(200).json({
       message: "Order placed successfully",
       order: newOrder,
+      failedItems, // 🔥 frontend will use this
     });
 
   } catch (error) {
