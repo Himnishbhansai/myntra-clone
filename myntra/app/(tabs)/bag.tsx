@@ -17,11 +17,12 @@ import { useAuth } from "@/context/AuthContext";
 import axios from "axios";
 import { useTheme } from "@/context/ThemeContext";
 
+// ...imports unchanged
+
 export default function Bag() {
   const router = useRouter();
   const { theme } = useTheme();
   const styles = createStyles(theme);
-
   const { user } = useAuth();
 
   const [isLoading, setIsLoading] = useState(false);
@@ -54,6 +55,15 @@ export default function Bag() {
     if (!user?._id) return;
     fetchCart();
   }, [user]);
+
+  // ✅ STATUS LOGIC (NEW)
+  const getStatus = (item: any) => {
+    if (!item.productId) return "Removed";
+    if (item.productId.stock < item.quantity) return "Out of Stock";
+    if (item.priceAtAdd && item.productId.price !== item.priceAtAdd)
+      return "Price Changed";
+    return null;
+  };
 
   const updateQuantity = async (id: string, qty: number) => {
     if (qty < 1) return;
@@ -92,40 +102,19 @@ export default function Bag() {
     }
   };
 
-  // 🔥 PRICE CHECK BEFORE CHECKOUT
-  const handleCheckout = async () => {
-    try {
-      const res = await axios.get(
-        `https://myntra-clone-7tse.onrender.com/bag/${user._id}`
-      );
-
-      const hasPriceChange = res.data.some(
-        (item: any) =>
-          item.priceAtAdd && item.productId?.price !== item.priceAtAdd
-      );
-     
-      
-      if (hasPriceChange) {
-        Alert.alert(
-          "Price Updated",
-          "Some items have changed price. Please review your cart."
-        );
-        fetchCart();
-        return;
-      }
-
-      router.push("/checkout");
-    } catch (err) {
-      console.log(err);
-    }
+  // ✅ CLEAN CHECKOUT (NO BLOCKING)
+  const handleCheckout = () => {
+    router.push("/checkout");
   };
 
   const total = cartItems.reduce(
-    (sum, item) => sum + (item.productId?.price || 0) * item.quantity,
+    (sum, item) =>
+      sum +
+      ((item.priceAtAdd || item.productId?.price || 0) *
+        item.quantity),
     0
   );
 
-  // 🔒 LOGIN GUARD
   if (!user) {
     return (
       <View style={styles.container}>
@@ -165,28 +154,28 @@ export default function Bag() {
       </View>
 
       <ScrollView style={styles.content}>
-        {/* 🟢 CART */}
+        {/* CART */}
         {cartItems.length > 0 && (
           <>
             <Text style={styles.sectionTitle}>My Cart</Text>
 
             {cartItems.map((item) => {
-              if (!item.productId) return null; // 🔥 discontinued safe
+              const status = getStatus(item);
 
               return (
                 <View key={item._id} style={styles.bagItem}>
                   <Image
-                    source={{ uri: item.productId.images?.[0] }}
+                    source={{ uri: item.productId?.images?.[0] }}
                     style={styles.itemImage}
                   />
 
                   <View style={styles.itemInfo}>
                     <Text style={styles.brandName}>
-                      {item.productId.brand}
+                      {item.productId?.brand}
                     </Text>
 
                     <Text style={styles.itemName}>
-                      {item.productId.name}
+                      {item.productId?.name || "Product removed"}
                     </Text>
 
                     <Text style={styles.itemSize}>
@@ -194,37 +183,66 @@ export default function Bag() {
                     </Text>
 
                     <Text style={styles.itemPrice}>
-                      ₹{item.productId.price}
+                      ₹
+                      {item.priceAtAdd ||
+                        item.productId?.price}
                     </Text>
 
-                    <View style={styles.quantityContainer}>
-                      <TouchableOpacity
-                        style={styles.quantityButton}
-                        onPress={() =>
-                          updateQuantity(item._id, item.quantity - 1)
-                        }
+                    {/* 🔥 STATUS UI */}
+                    {status && (
+                      <Text
+                        style={{
+                          color: "red",
+                          fontSize: 12,
+                          marginTop: 4,
+                        }}
                       >
-                        <Minus size={20} color={theme.text} />
-                      </TouchableOpacity>
-
-                      <Text style={styles.quantity}>
-                        {item.quantity}
+                        {status}
                       </Text>
+                    )}
 
-                      <TouchableOpacity
-                        style={styles.quantityButton}
-                        onPress={() =>
-                          updateQuantity(item._id, item.quantity + 1)
-                        }
-                      >
-                        <Plus size={20} color={theme.text} />
-                      </TouchableOpacity>
-                    </View>
+                    {/* 🔥 DISABLE IF INVALID */}
+                    {!status && (
+                      <View style={styles.quantityContainer}>
+                        <TouchableOpacity
+                          style={styles.quantityButton}
+                          onPress={() =>
+                            updateQuantity(
+                              item._id,
+                              item.quantity - 1
+                            )
+                          }
+                        >
+                          <Minus size={20} color={theme.text} />
+                        </TouchableOpacity>
+
+                        <Text style={styles.quantity}>
+                          {item.quantity}
+                        </Text>
+
+                        <TouchableOpacity
+                          style={styles.quantityButton}
+                          onPress={() =>
+                            updateQuantity(
+                              item._id,
+                              item.quantity + 1
+                            )
+                          }
+                        >
+                          <Plus size={20} color={theme.text} />
+                        </TouchableOpacity>
+                      </View>
+                    )}
 
                     <TouchableOpacity
                       onPress={() => moveItem(item._id, true)}
                     >
-                      <Text style={{ color: theme.primary, marginTop: 5 }}>
+                      <Text
+                        style={{
+                          color: theme.primary,
+                          marginTop: 5,
+                        }}
+                      >
                         Save for later
                       </Text>
                     </TouchableOpacity>
@@ -242,10 +260,12 @@ export default function Bag() {
           </>
         )}
 
-        {/* 🟡 SAVED */}
+        {/* SAVED (unchanged) */}
         {savedItems.length > 0 && (
           <>
-            <Text style={styles.sectionTitle}>Saved for Later</Text>
+            <Text style={styles.sectionTitle}>
+              Saved for Later
+            </Text>
 
             {savedItems.map((item) => {
               if (!item.productId) return null;
@@ -287,7 +307,9 @@ export default function Bag() {
       {/* FOOTER */}
       <View style={styles.footer}>
         <View style={styles.totalContainer}>
-          <Text style={styles.totalLabel}>Total Amount</Text>
+          <Text style={styles.totalLabel}>
+            Total Amount
+          </Text>
           <Text style={styles.totalAmount}>₹{total}</Text>
         </View>
 

@@ -61,7 +61,7 @@ router.get("/:userid", async (req, res) => {
   try {
     const bag = await Bag.find({
       userId: req.params.userid,
-    }).populate("productId");
+    }).populate("productId", "name brand price stock images");
 
     // 🔥 REMOVE INVALID PRODUCTS
     const validItems = bag.filter(
@@ -113,7 +113,7 @@ router.put("/quantity/:id", async (req, res) => {
       return res.status(400).json({ message: "Invalid quantity" });
     }
 
-    const item = await Bag.findById(req.params.id).populate("productId");
+    const item = await Bag.findById(req.params.id).populate("productId", "name brand price stock images");
 
     if (!item || !item.productId) {
       return res.status(400).json({ message: "Item not found" });
