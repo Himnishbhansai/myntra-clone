@@ -101,7 +101,7 @@ export default function Bag() {
 
       const hasPriceChange = res.data.some(
         (item: any) =>
-          item.productId?.price !== item.priceAtAdd
+          item.priceAtAdd && item.productId?.price !== item.priceAtAdd
       );
 
       if (hasPriceChange) {
