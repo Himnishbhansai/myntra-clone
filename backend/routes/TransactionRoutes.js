@@ -4,31 +4,6 @@ const Transaction = require("../models/Transaction");
 const { Parser } = require("json2csv");
 const PDFDocument = require("pdfkit");
 
-// ✅ CREATE TRANSACTION (we’ll call this from order)
-router.post("/", async (req, res) => {
-  try {
-    const { userId, amount, paymentMethod } = req.body;
-
-    const transaction = await Transaction.create({
-      userId,
-      amount,
-      paymentMethod,
-      status: "success",
-      invoiceId: "INV-" + Date.now(),
-      logs: [
-        {
-          status: "success",
-          message: "Transaction created",
-        },
-      ],
-    });
-
-    res.json(transaction);
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ message: "Error creating transaction" });
-  }
-});
 
 // ✅ GET USER TRANSACTIONS (pagination + sorting)
 router.get("/:userId", async (req, res) => {

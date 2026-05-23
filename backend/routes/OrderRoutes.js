@@ -15,30 +15,18 @@ function genrateRandomTracking() {
   ];
   const locations = ["Mumbai", "Delhi", "Bangalore", "Hyderabad", "Pune"];
 
-  const randomcarrier =
-    carriers[Math.floor(Math.random() * carriers.length)];
-  const randomstatusOptions =
-    statusOptions[Math.floor(Math.random() * statusOptions.length)];
-  const randomlocations =
-    locations[Math.floor(Math.random() * locations.length)];
-
   return {
     number: "TRK" + Math.floor(Math.random() * 10000000),
-    carrier: randomcarrier,
+    carrier: carriers[Math.floor(Math.random() * carriers.length)],
     estimatedDelivery: new Date(
       Date.now() + 5 * 24 * 60 * 60 * 1000
     ).toISOString(),
-    currentLocation: randomlocations,
-    status: randomstatusOptions,
+    currentLocation: locations[Math.floor(Math.random() * locations.length)],
+    status: statusOptions[Math.floor(Math.random() * statusOptions.length)],
     timeline: [
       {
         status: "Order placed",
         location: "Warehouse",
-        timestamp: new Date().toISOString(),
-      },
-      {
-        status: randomstatusOptions,
-        location: randomlocations,
         timestamp: new Date().toISOString(),
       },
     ],
@@ -59,7 +47,7 @@ router.post("/create/:userId", async (req, res) => {
       return res.status(400).json({ message: "No item in the bag" });
     }
 
-    // 🔥 VALIDATION
+    // VALIDATION
     for (let item of bag) {
       const product = item.productId;
 
@@ -74,15 +62,8 @@ router.post("/create/:userId", async (req, res) => {
           message: `${product.name} is out of stock`,
         });
       }
-
-      if (item.priceAtAdd && item.priceAtAdd !== product.price) {
-        return res.status(400).json({
-          message: `${product.name} price has changed`,
-        });
-      }
     }
 
-    // ✅ ORDER ITEMS
     const orderItems = bag.map((item) => ({
       productId: item.productId._id,
       size: item.size,
@@ -90,7 +71,6 @@ router.post("/create/:userId", async (req, res) => {
       quantity: item.quantity,
     }));
 
-    // ✅ TOTAL
     const total = orderItems.reduce(
       (sum, item) => sum + item.price * item.quantity,
       0
@@ -101,7 +81,7 @@ router.post("/create/:userId", async (req, res) => {
       date: new Date().toISOString(),
       status: "Processing",
       items: orderItems,
-      total: total,
+      total,
       shippingAddress: req.body.shippingAddress,
       paymentMethod: req.body.paymentMethod,
       tracking: genrateRandomTracking(),
@@ -109,39 +89,27 @@ router.post("/create/:userId", async (req, res) => {
 
     await newOrder.save();
 
-    // ✅🔥 CREATE TRANSACTION (THIS IS THE KEY PART)
-    // ✅ CREATE TRANSACTION AUTOMATICALLY
-await newOrder.save();
-
-await axios.post("https://myntra-clone-7tse.onrender.com/transaction", {
-  userId: userid,
-  amount: total,
-  paymentMethod: req.body.paymentMethod,
-  paymentId: "PAY-" + Date.now(), // 🔥 unique id
-});
-
-// 🔥 ADD THIS HERE
-await Transaction.create({
-  userId: userid,
-  amount: total,
-  paymentMethod: req.body.paymentMethod,
-  status: "success",
-  invoiceId: "INV-" + Date.now(),
-  logs: [
-    {
-      status: "created",
-      message: "Transaction initiated",
-      timestamp: new Date(),
-    },
-    {
+    // ✅ CLEAN TRANSACTION (NO AXIOS, NO DUPLICATE)
+    await Transaction.create({
+      userId: userid,
+      amount: total,
+      paymentMethod: req.body.paymentMethod,
       status: "success",
-      message: "Payment successful",
-      timestamp: new Date(),
-    },
-  ],
-});
+      invoiceId: "INV-" + Date.now(),
+      logs: [
+        {
+          status: "created",
+          message: "Transaction initiated",
+          timestamp: new Date(),
+        },
+        {
+          status: "success",
+          message: "Payment successful",
+          timestamp: new Date(),
+        },
+      ],
+    });
 
-    // 🧹 CLEAR CART
     await Bag.deleteMany({
       userId: userid,
       savedForLater: false,
@@ -152,21 +120,7 @@ await Transaction.create({
       order: newOrder,
     });
   } catch (error) {
-    console.log("ORDER ERROR:", error); // 👈 important for debugging
-    return res.status(500).json({ message: "Something went wrong" });
-  }
-});
-
-// ✅ GET USER ORDERS
-router.get("/user/:userid", async (req, res) => {
-  try {
-    const order = await Order.find({
-      userId: req.params.userid,
-    }).populate("items.productId");
-
-    res.status(200).json(order);
-  } catch (error) {
-    console.log(error);
+    console.log("ORDER ERROR:", error);
     return res.status(500).json({ message: "Something went wrong" });
   }
 });
