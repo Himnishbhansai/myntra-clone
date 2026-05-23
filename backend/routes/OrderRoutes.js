@@ -129,4 +129,18 @@ router.post("/create/:userId", async (req, res) => {
   }
 });
 
+// ✅ GET USER ORDERS
+router.get("/user/:userid", async (req, res) => {
+  try {
+    const orders = await Order.find({
+      userId: req.params.userid,
+    }).populate("items.productId");
+
+    res.status(200).json(orders);
+  } catch (error) {
+    console.log("FETCH ORDER ERROR:", error);
+    return res.status(500).json({ message: "Something went wrong" });
+  }
+});
+
 module.exports = router;
