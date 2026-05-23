@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 
 import { useRouter } from "expo-router";
@@ -91,6 +92,33 @@ export default function Bag() {
     }
   };
 
+  // 🔥 PRICE CHECK BEFORE CHECKOUT
+  const handleCheckout = async () => {
+    try {
+      const res = await axios.get(
+        `https://myntra-clone-7tse.onrender.com/bag/${user._id}`
+      );
+
+      const hasPriceChange = res.data.some(
+        (item: any) =>
+          item.productId?.price !== item.priceAtAdd
+      );
+
+      if (hasPriceChange) {
+        Alert.alert(
+          "Price Updated",
+          "Some items have changed price. Please review your cart."
+        );
+        fetchCart();
+        return;
+      }
+
+      router.push("/checkout");
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
   const total = cartItems.reduce(
     (sum, item) => sum + (item.productId?.price || 0) * item.quantity,
     0
@@ -141,72 +169,75 @@ export default function Bag() {
           <>
             <Text style={styles.sectionTitle}>My Cart</Text>
 
-            {cartItems.map((item) => (
-              <View key={item._id} style={styles.bagItem}>
-                <Image
-                  source={{ uri: item.productId?.images?.[0] }}
-                  style={styles.itemImage}
-                />
+            {cartItems.map((item) => {
+              if (!item.productId) return null; // 🔥 discontinued safe
 
-                <View style={styles.itemInfo}>
-                  <Text style={styles.brandName}>
-                    {item.productId?.brand}
-                  </Text>
+              return (
+                <View key={item._id} style={styles.bagItem}>
+                  <Image
+                    source={{ uri: item.productId.images?.[0] }}
+                    style={styles.itemImage}
+                  />
 
-                  <Text style={styles.itemName}>
-                    {item.productId?.name}
-                  </Text>
-
-                  <Text style={styles.itemSize}>
-                    Size: {item.size}
-                  </Text>
-
-                  <Text style={styles.itemPrice}>
-                    ₹{item.productId?.price}
-                  </Text>
-
-                  <View style={styles.quantityContainer}>
-                    <TouchableOpacity
-                      style={styles.quantityButton}
-                      onPress={() =>
-                        updateQuantity(item._id, item.quantity - 1)
-                      }
-                    >
-                      <Minus size={20} color={theme.text} />
-                    </TouchableOpacity>
-
-                    <Text style={styles.quantity}>
-                      {item.quantity}
+                  <View style={styles.itemInfo}>
+                    <Text style={styles.brandName}>
+                      {item.productId.brand}
                     </Text>
 
+                    <Text style={styles.itemName}>
+                      {item.productId.name}
+                    </Text>
+
+                    <Text style={styles.itemSize}>
+                      Size: {item.size}
+                    </Text>
+
+                    <Text style={styles.itemPrice}>
+                      ₹{item.productId.price}
+                    </Text>
+
+                    <View style={styles.quantityContainer}>
+                      <TouchableOpacity
+                        style={styles.quantityButton}
+                        onPress={() =>
+                          updateQuantity(item._id, item.quantity - 1)
+                        }
+                      >
+                        <Minus size={20} color={theme.text} />
+                      </TouchableOpacity>
+
+                      <Text style={styles.quantity}>
+                        {item.quantity}
+                      </Text>
+
+                      <TouchableOpacity
+                        style={styles.quantityButton}
+                        onPress={() =>
+                          updateQuantity(item._id, item.quantity + 1)
+                        }
+                      >
+                        <Plus size={20} color={theme.text} />
+                      </TouchableOpacity>
+                    </View>
+
                     <TouchableOpacity
-                      style={styles.quantityButton}
-                      onPress={() =>
-                        updateQuantity(item._id, item.quantity + 1)
-                      }
+                      onPress={() => moveItem(item._id, true)}
                     >
-                      <Plus size={20} color={theme.text} />
+                      <Text style={{ color: theme.primary, marginTop: 5 }}>
+                        Save for later
+                      </Text>
                     </TouchableOpacity>
                   </View>
 
                   <TouchableOpacity
-                    onPress={() => moveItem(item._id, true)}
+                    style={{ padding: 10 }}
+                    onPress={() => handleDelete(item._id)}
                   >
-                    <Text style={{ color: theme.primary, marginTop: 5 }}>
-                      Save for later
-                    </Text>
+                    <Trash2 size={22} color="red" />
                   </TouchableOpacity>
                 </View>
-
-                {/* 🗑 DELETE */}
-                <TouchableOpacity
-                  style={{ padding: 10 }}
-                  onPress={() => handleDelete(item._id)}
-                >
-                  <Trash2 size={22} color="red" />
-                </TouchableOpacity>
-              </View>
-            ))}
+              );
+            })}
           </>
         )}
 
@@ -215,36 +246,39 @@ export default function Bag() {
           <>
             <Text style={styles.sectionTitle}>Saved for Later</Text>
 
-            {savedItems.map((item) => (
-              <View key={item._id} style={styles.bagItem}>
-                <Image
-                  source={{ uri: item.productId?.images?.[0] }}
-                  style={styles.itemImage}
-                />
+            {savedItems.map((item) => {
+              if (!item.productId) return null;
 
-                <View style={styles.itemInfo}>
-                  <Text style={styles.itemName}>
-                    {item.productId?.name}
-                  </Text>
+              return (
+                <View key={item._id} style={styles.bagItem}>
+                  <Image
+                    source={{ uri: item.productId.images?.[0] }}
+                    style={styles.itemImage}
+                  />
+
+                  <View style={styles.itemInfo}>
+                    <Text style={styles.itemName}>
+                      {item.productId.name}
+                    </Text>
+
+                    <TouchableOpacity
+                      onPress={() => moveItem(item._id, false)}
+                    >
+                      <Text style={{ color: theme.primary }}>
+                        Move to Cart
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
 
                   <TouchableOpacity
-                    onPress={() => moveItem(item._id, false)}
+                    style={{ padding: 10 }}
+                    onPress={() => handleDelete(item._id)}
                   >
-                    <Text style={{ color: theme.primary }}>
-                      Move to Cart
-                    </Text>
+                    <Trash2 size={22} color="red" />
                   </TouchableOpacity>
                 </View>
-
-                {/* 🗑 DELETE */}
-                <TouchableOpacity
-                  style={{ padding: 10 }}
-                  onPress={() => handleDelete(item._id)}
-                >
-                  <Trash2 size={22} color="red" />
-                </TouchableOpacity>
-              </View>
-            ))}
+              );
+            })}
           </>
         )}
       </ScrollView>
@@ -258,7 +292,7 @@ export default function Bag() {
 
         <TouchableOpacity
           style={styles.checkoutButton}
-          onPress={() => router.push("/checkout")}
+          onPress={handleCheckout}
         >
           <Text style={styles.checkoutButtonText}>
             PLACE ORDER

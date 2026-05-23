@@ -2,6 +2,7 @@ const express = require("express");
 const Bag = require("../models/Bag");
 const Order = require("../models/Order");
 const Transaction = require("../models/Transaction");
+const Product = require("../models/Product"); // 🔥 ADD THIS
 
 const router = express.Router();
 
@@ -38,7 +39,6 @@ router.post("/create/:userId", async (req, res) => {
     const userid = req.params.userId;
     const { shippingAddress, paymentMethod } = req.body;
 
-    // 🔥 ADD THIS (prevents 500)
     if (!paymentMethod) {
       return res.status(400).json({ message: "Payment method missing" });
     }
@@ -52,26 +52,37 @@ router.post("/create/:userId", async (req, res) => {
       return res.status(400).json({ message: "No item in the bag" });
     }
 
+    // 🔥 CRITICAL VALIDATION LOOP
     for (let item of bag) {
-      const product = item.productId;
+      const product = await Product.findById(item.productId?._id);
 
+      // ❌ DISCONTINUED PRODUCT
       if (!product) {
         return res.status(400).json({
-          message: "Some products are no longer available",
+          message: `Some products are no longer available`,
         });
       }
 
+      // ❌ PRICE CHANGED
+      if (product.price !== item.priceAtAdd) {
+        return res.status(400).json({
+          message: `Price changed for ${product.name}`,
+        });
+      }
+
+      // ❌ STOCK CHECK
       if (product.stock < item.quantity) {
         return res.status(400).json({
-          message: `${product.name} is out of stock`,
+          message: `Only ${product.stock} left for ${product.name}`,
         });
       }
     }
 
+    // ✅ CREATE ORDER ITEMS (use locked price)
     const orderItems = bag.map((item) => ({
       productId: item.productId._id,
       size: item.size,
-      price: item.productId.price,
+      price: item.priceAtAdd, // 🔥 USE LOCKED PRICE
       quantity: item.quantity,
     }));
 
@@ -91,12 +102,12 @@ router.post("/create/:userId", async (req, res) => {
       tracking: genrateRandomTracking(),
     });
 
-    // ✅ TRANSACTION (safe)
+    // ✅ TRANSACTION
     await Transaction.create({
       userId: userid,
       amount: total,
       paymentMethod,
-      paymentId: "PAY-" + Date.now(), // 🔥 ADD THIS
+      paymentId: "PAY-" + Date.now(),
       status: "success",
       invoiceId: "INV-" + Date.now(),
       logs: [
@@ -113,6 +124,7 @@ router.post("/create/:userId", async (req, res) => {
       ],
     });
 
+    // ✅ CLEAR CART
     await Bag.deleteMany({
       userId: userid,
       savedForLater: false,
@@ -124,7 +136,7 @@ router.post("/create/:userId", async (req, res) => {
     });
 
   } catch (error) {
-    console.log("ORDER ERROR:", error); // 👈 CHECK THIS LOG
+    console.log("ORDER ERROR:", error);
     return res.status(500).json({ message: "Something went wrong" });
   }
 });

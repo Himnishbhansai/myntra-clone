@@ -173,6 +173,11 @@ useEffect(() => {
       return;
     }
 
+    if (product?.stock !== undefined && product.stock < 1) {
+      Alert.alert("Out of Stock", "This product is currently unavailable");
+      return;
+    }
+
     if (!selectedSize) {
       Alert.alert("Select Size", "Please select a size");
       return;
@@ -431,7 +436,7 @@ useEffect(() => {
         <TouchableOpacity
           style={styles.addToBagButton}
           onPress={handleAddToBag}
-          disabled={buttonLoading}
+          disabled={buttonLoading || product?.stock < 1}
         >
           {buttonLoading ? (
             <ActivityIndicator color="#fff" />
