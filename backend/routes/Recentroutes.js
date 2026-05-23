@@ -8,52 +8,87 @@ router.get("/test", (req, res) => {
   res.send("Recent route working");
 });
 
-// ✅ ADD / UPDATE RECENT (IDEMPOTENT + LIMIT 20)
+// ✅ ADD / MERGE RECENTS (SINGLE + BULK SUPPORT)
 router.post("/", async (req, res) => {
   try {
-    const { userId, productId } = req.body;
+    const { userId, productId, products } = req.body;
 
-    if (!userId || !productId) {
-      return res.status(400).json({ message: "Missing fields" });
+    if (!userId) {
+      return res.status(400).json({ message: "Missing userId" });
     }
 
-    // 🔥 REMOVE DUPLICATE (if exists)
-    await Recent.findOneAndDelete({ userId, productId });
+    // ================================
+    // 🔥 CASE 1: BULK MERGE (LOGIN)
+    // ================================
+    if (products && Array.isArray(products)) {
+      for (let item of products) {
+        if (!item.productId) continue;
 
-    // ✅ CREATE NEW (latest)
-    await Recent.create({
-      userId,
-      productId,
-      createdAt: new Date(),
-    });
+        // remove duplicate
+        await Recent.findOneAndDelete({
+          userId,
+          productId: item.productId,
+        });
 
-    // 🔥 ENFORCE MAX 20 (IMPORTANT FOR TASK)
+        // add fresh
+        await Recent.create({
+          userId,
+          productId: item.productId,
+          createdAt: item.viewedAt || new Date(),
+        });
+      }
+    }
+
+    // ================================
+    // 🔥 CASE 2: SINGLE ADD (PRODUCT VIEW)
+    // ================================
+    else if (productId) {
+      await Recent.findOneAndDelete({ userId, productId });
+
+      await Recent.create({
+        userId,
+        productId,
+        createdAt: new Date(),
+      });
+    }
+
+    else {
+      return res.status(400).json({
+        message: "Provide productId or products array",
+      });
+    }
+
+    // ================================
+    // 🔥 ENFORCE LIMIT 20
+    // ================================
     const allRecents = await Recent.find({ userId })
       .sort({ createdAt: -1 });
 
     if (allRecents.length > 20) {
-      const extra = allRecents.slice(20); // beyond 20
+      const extra = allRecents.slice(20);
       const idsToDelete = extra.map((item) => item._id);
 
-      await Recent.deleteMany({ _id: { $in: idsToDelete } });
+      await Recent.deleteMany({
+        _id: { $in: idsToDelete },
+      });
     }
 
     res.json({ message: "Recent updated" });
 
   } catch (err) {
-    console.log("ADD RECENT ERROR:", err);
-    res.status(500).json({ message: "Error adding recent" });
+    console.log("RECENT ERROR:", err);
+    res.status(500).json({ message: "Error updating recents" });
   }
 });
 
-// ✅ GET RECENTS (SORTED + POPULATED)
+// ✅ GET RECENTS
 router.get("/:userId", async (req, res) => {
   try {
     const recents = await Recent.find({
       userId: req.params.userId,
     })
-      .sort({ createdAt: -1 }) // latest first
-      .limit(20) // ✅ strict limit
+      .sort({ createdAt: -1 })
+      .limit(20)
       .populate("productId");
 
     res.json(recents);
