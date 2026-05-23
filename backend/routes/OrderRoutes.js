@@ -33,21 +33,25 @@ function genrateRandomTracking() {
   };
 }
 
-// ✅ CHECKOUT
 router.post("/create/:userId", async (req, res) => {
   try {
     const userid = req.params.userId;
+    const { shippingAddress, paymentMethod } = req.body;
+
+    // 🔥 ADD THIS (prevents 500)
+    if (!paymentMethod) {
+      return res.status(400).json({ message: "Payment method missing" });
+    }
 
     const bag = await Bag.find({
       userId: userid,
       savedForLater: false,
     }).populate("productId");
 
-    if (bag.length === 0) {
+    if (!bag.length) {
       return res.status(400).json({ message: "No item in the bag" });
     }
 
-    // VALIDATION
     for (let item of bag) {
       const product = item.productId;
 
@@ -76,24 +80,23 @@ router.post("/create/:userId", async (req, res) => {
       0
     );
 
-    const newOrder = new Order({
+    const newOrder = await Order.create({
       userId: userid,
       date: new Date().toISOString(),
       status: "Processing",
       items: orderItems,
       total,
-      shippingAddress: req.body.shippingAddress,
-      paymentMethod: req.body.paymentMethod,
+      shippingAddress,
+      paymentMethod,
       tracking: genrateRandomTracking(),
     });
 
-    await newOrder.save();
-
-    // ✅ CLEAN TRANSACTION (NO AXIOS, NO DUPLICATE)
+    // ✅ TRANSACTION (safe)
     await Transaction.create({
       userId: userid,
       amount: total,
-      paymentMethod: req.body.paymentMethod,
+      paymentMethod,
+      paymentId: "PAY-" + Date.now(), // 🔥 ADD THIS
       status: "success",
       invoiceId: "INV-" + Date.now(),
       logs: [
@@ -119,8 +122,9 @@ router.post("/create/:userId", async (req, res) => {
       message: "Order placed successfully",
       order: newOrder,
     });
+
   } catch (error) {
-    console.log("ORDER ERROR:", error);
+    console.log("ORDER ERROR:", error); // 👈 CHECK THIS LOG
     return res.status(500).json({ message: "Something went wrong" });
   }
 });

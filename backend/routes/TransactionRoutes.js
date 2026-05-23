@@ -5,17 +5,65 @@ const { Parser } = require("json2csv");
 const PDFDocument = require("pdfkit");
 
 
-// ✅ GET USER TRANSACTIONS (pagination + sorting)
+// ✅ CREATE TRANSACTION (IDEMPOTENT)
+router.post("/", async (req, res) => {
+  try {
+    const { userId, amount, paymentMethod, paymentId } = req.body;
+
+    // 🔥 BASIC VALIDATION (prevents 500)
+    if (!userId || !amount || !paymentMethod) {
+      return res.status(400).json({ message: "Missing fields" });
+    }
+
+    // 🔥 ensure paymentId always exists
+    const finalPaymentId = paymentId || "PAY-" + Date.now();
+
+    // 🔥 prevent duplicates
+    const existing = await Transaction.findOne({ paymentId: finalPaymentId });
+    if (existing) return res.json(existing);
+
+    const newTransaction = await Transaction.create({
+      userId,
+      amount,
+      paymentMethod,
+      paymentId: finalPaymentId,
+      status: "success",
+      invoiceId: "INV-" + Date.now(),
+      logs: [
+        {
+          status: "created",
+          message: "Transaction initiated",
+          timestamp: new Date(),
+        },
+        {
+          status: "success",
+          message: "Payment successful",
+          timestamp: new Date(),
+        },
+      ],
+    });
+
+    res.json(newTransaction);
+  } catch (err) {
+    console.log("CREATE TXN ERROR:", err);
+    res.status(500).json({ message: "Error creating transaction" });
+  }
+});
+
+
+// ✅ GET USER TRANSACTIONS (SAFE PAGINATION)
 router.get("/:userId", async (req, res) => {
   try {
-    const { page = 1, limit = 10, sort = "desc" } = req.query;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const sort = req.query.sort === "asc" ? 1 : -1;
 
     const transactions = await Transaction.find({
       userId: req.params.userId,
     })
-      .sort({ createdAt: sort === "desc" ? -1 : 1 })
+      .sort({ createdAt: sort })
       .skip((page - 1) * limit)
-      .limit(Number(limit));
+      .limit(limit);
 
     const total = await Transaction.countDocuments({
       userId: req.params.userId,
@@ -24,21 +72,26 @@ router.get("/:userId", async (req, res) => {
     res.json({
       data: transactions,
       total,
-      page: Number(page),
+      page,
       totalPages: Math.ceil(total / limit),
     });
   } catch (err) {
-    console.log(err);
+    console.log("FETCH TXN ERROR:", err);
     res.status(500).json({ message: "Error fetching transactions" });
   }
 });
 
-// ✅ EXPORT CSV
+
+// ✅ EXPORT CSV (SAFE)
 router.get("/export/:userId", async (req, res) => {
   try {
     const transactions = await Transaction.find({
       userId: req.params.userId,
     }).sort({ createdAt: -1 });
+
+    if (!transactions.length) {
+      return res.status(404).json({ message: "No transactions found" });
+    }
 
     const fields = [
       "invoiceId",
@@ -55,12 +108,13 @@ router.get("/export/:userId", async (req, res) => {
     res.attachment("transactions.csv");
     return res.send(csv);
   } catch (err) {
-    console.log(err);
+    console.log("CSV ERROR:", err);
     res.status(500).json({ message: "Error exporting CSV" });
   }
 });
 
-// 🔥 DOWNLOAD RECEIPT (PDF)
+
+// ✅ PDF RECEIPT
 router.get("/receipt/:id", async (req, res) => {
   try {
     const transaction = await Transaction.findById(req.params.id);
@@ -79,7 +133,6 @@ router.get("/receipt/:id", async (req, res) => {
 
     doc.pipe(res);
 
-    // 🎨 CONTENT
     doc.fontSize(20).text("Payment Receipt", { align: "center" });
     doc.moveDown();
 
@@ -96,44 +149,8 @@ router.get("/receipt/:id", async (req, res) => {
 
     doc.end();
   } catch (err) {
-    console.log(err);
+    console.log("PDF ERROR:", err);
     res.status(500).json({ message: "Error generating receipt" });
-  }
-});
-
-router.post("/", async (req, res) => {
-  try {
-    const { userId, amount, paymentMethod, paymentId } = req.body;
-
-    // 🔥 check if already exists
-    const existing = await Transaction.findOne({ paymentId });
-
-    if (existing) {
-      return res.json(existing); // ✅ prevent duplicate
-    }
-
-    const invoiceId = "INV-" + Date.now();
-
-    const newTransaction = await Transaction.create({
-      userId,
-      amount,
-      paymentMethod,
-      paymentId,
-      status: "success",
-      invoiceId,
-      logs: [
-        {
-          status: "success",
-          message: "Transaction created",
-          timestamp: new Date(),
-        },
-      ],
-    });
-
-    res.json(newTransaction);
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ message: "Error creating transaction" });
   }
 });
 
