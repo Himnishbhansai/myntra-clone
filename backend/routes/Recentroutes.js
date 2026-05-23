@@ -11,73 +11,41 @@ router.get("/test", (req, res) => {
 // ✅ ADD / MERGE RECENTS (SINGLE + BULK SUPPORT)
 router.post("/", async (req, res) => {
   try {
-    const { userId, productId, products } = req.body;
+    const { userId, productId } = req.body;
 
-    if (!userId) {
-      return res.status(400).json({ message: "Missing userId" });
+    if (!userId || !productId) {
+      return res.status(400).json({ message: "Missing fields" });
     }
 
-    // ================================
-    // 🔥 CASE 1: BULK MERGE (LOGIN)
-    // ================================
-    if (products && Array.isArray(products)) {
-      for (let item of products) {
-        if (!item.productId) continue;
-
-        // remove duplicate
-        await Recent.findOneAndDelete({
-          userId,
-          productId: item.productId,
-        });
-
-        // add fresh
-        await Recent.create({
-          userId,
-          productId: item.productId,
-          createdAt: item.viewedAt || new Date(),
-        });
-      }
-    }
-
-    // ================================
-    // 🔥 CASE 2: SINGLE ADD (PRODUCT VIEW)
-    // ================================
-    else if (productId) {
-      await Recent.findOneAndDelete({ userId, productId });
-
-      await Recent.create({
+    // ✅ UPSERT instead of delete + create (prevents duplicates completely)
+    await Recent.findOneAndUpdate(
+      { userId, productId },
+      {
         userId,
         productId,
         createdAt: new Date(),
-      });
-    }
+      },
+      {
+        upsert: true, // create if not exists
+        new: true,
+      }
+    );
 
-    else {
-      return res.status(400).json({
-        message: "Provide productId or products array",
-      });
-    }
-
-    // ================================
-    // 🔥 ENFORCE LIMIT 20
-    // ================================
-    const allRecents = await Recent.find({ userId })
+    // 🔥 KEEP ONLY LATEST 20
+    const recents = await Recent.find({ userId })
       .sort({ createdAt: -1 });
 
-    if (allRecents.length > 20) {
-      const extra = allRecents.slice(20);
-      const idsToDelete = extra.map((item) => item._id);
+    if (recents.length > 20) {
+      const idsToDelete = recents.slice(20).map((r) => r._id);
 
-      await Recent.deleteMany({
-        _id: { $in: idsToDelete },
-      });
+      await Recent.deleteMany({ _id: { $in: idsToDelete } });
     }
 
     res.json({ message: "Recent updated" });
 
   } catch (err) {
-    console.log("RECENT ERROR:", err);
-    res.status(500).json({ message: "Error updating recents" });
+    console.log("ADD RECENT ERROR:", err);
+    res.status(500).json({ message: "Error adding recent" });
   }
 });
 
