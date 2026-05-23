@@ -21,34 +21,15 @@ export default function Bag() {
   const { theme } = useTheme();
   const styles = createStyles(theme);
 
-  const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
 
-  // ✅ NEW STATES
+  const [isLoading, setIsLoading] = useState(false);
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [savedItems, setSavedItems] = useState<any[]>([]);
 
-  const updateQuantity = async (id: string, newQty: number) => {
-  try {
-    if (newQty < 1) return;
-
-    await axios.put(
-      `https://myntra-clone-7tse.onrender.com/bag/quantity/${id}`,
-      { quantity: newQty }
-    );
-
-    fetchCart(); // refresh UI
-  } catch (err) {
-    console.log(err);
-  }
-};
-
-  useEffect(() => {
-    if (user) fetchCart();
-  }, [user]);
-
-  // ✅ UPDATED FETCH
   const fetchCart = async () => {
+    if (!user?._id) return;
+
     try {
       setIsLoading(true);
 
@@ -56,19 +37,37 @@ export default function Bag() {
         `https://myntra-clone-7tse.onrender.com/bag/${user._id}`
       );
 
-      const active = res.data.filter((item: any) => !item.savedForLater);
-      const saved = res.data.filter((item: any) => item.savedForLater);
+      const active = res.data.filter((i: any) => !i.savedForLater);
+      const saved = res.data.filter((i: any) => i.savedForLater);
 
       setCartItems(active);
       setSavedItems(saved);
-    } catch (error) {
-      console.log(error);
+    } catch (err) {
+      console.log(err);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // ✅ MOVE FUNCTION
+  useEffect(() => {
+    if (!user?._id) return;
+    fetchCart();
+  }, [user]);
+
+  const updateQuantity = async (id: string, qty: number) => {
+    if (qty < 1) return;
+
+    try {
+      await axios.put(
+        `https://myntra-clone-7tse.onrender.com/bag/quantity/${id}`,
+        { quantity: qty }
+      );
+      fetchCart();
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
   const moveItem = async (id: string, value: boolean) => {
     try {
       await axios.put(
@@ -81,23 +80,23 @@ export default function Bag() {
     }
   };
 
-  const handledelete = async (itemid: any) => {
+  const handleDelete = async (id: string) => {
     try {
       await axios.delete(
-        `https://myntra-clone-7tse.onrender.com/bag/${itemid}`
+        `https://myntra-clone-7tse.onrender.com/bag/${id}`
       );
       fetchCart();
-    } catch (error) {
-      console.log(error);
+    } catch (err) {
+      console.log(err);
     }
   };
 
-  // ✅ TOTAL ONLY ACTIVE ITEMS
   const total = cartItems.reduce(
-    (sum, item) => sum + item.productId.price * item.quantity,
+    (sum, item) => sum + (item.productId?.price || 0) * item.quantity,
     0
   );
 
+  // 🔒 LOGIN GUARD
   if (!user) {
     return (
       <View style={styles.container}>
@@ -137,66 +136,81 @@ export default function Bag() {
       </View>
 
       <ScrollView style={styles.content}>
-        {/* 🟢 ACTIVE CART */}
-        <Text style={styles.sectionTitle}>My Cart</Text>
+        {/* 🟢 CART */}
+        {cartItems.length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>My Cart</Text>
 
-        {cartItems.map((item) => (
-          <View key={item._id} style={styles.bagItem}>
-            <Image
-              source={{ uri: item.productId.images[0] }}
-              style={styles.itemImage}
-            />
+            {cartItems.map((item) => (
+              <View key={item._id} style={styles.bagItem}>
+                <Image
+                  source={{ uri: item.productId?.images?.[0] }}
+                  style={styles.itemImage}
+                />
 
-            <View style={styles.itemInfo}>
-              <Text style={styles.brandName}>
-                {item.productId.brand}
-              </Text>
+                <View style={styles.itemInfo}>
+                  <Text style={styles.brandName}>
+                    {item.productId?.brand}
+                  </Text>
 
-              <Text style={styles.itemName}>
-                {item.productId.name}
-              </Text>
+                  <Text style={styles.itemName}>
+                    {item.productId?.name}
+                  </Text>
 
-              <Text style={styles.itemSize}>
-                Size: {item.size}
-              </Text>
+                  <Text style={styles.itemSize}>
+                    Size: {item.size}
+                  </Text>
 
-              <Text style={styles.itemPrice}>
-                ₹{item.productId.price}
-              </Text>
+                  <Text style={styles.itemPrice}>
+                    ₹{item.productId?.price}
+                  </Text>
 
-              <View style={styles.quantityContainer}>
+                  <View style={styles.quantityContainer}>
+                    <TouchableOpacity
+                      style={styles.quantityButton}
+                      onPress={() =>
+                        updateQuantity(item._id, item.quantity - 1)
+                      }
+                    >
+                      <Minus size={20} color={theme.text} />
+                    </TouchableOpacity>
+
+                    <Text style={styles.quantity}>
+                      {item.quantity}
+                    </Text>
+
+                    <TouchableOpacity
+                      style={styles.quantityButton}
+                      onPress={() =>
+                        updateQuantity(item._id, item.quantity + 1)
+                      }
+                    >
+                      <Plus size={20} color={theme.text} />
+                    </TouchableOpacity>
+                  </View>
+
+                  <TouchableOpacity
+                    onPress={() => moveItem(item._id, true)}
+                  >
+                    <Text style={{ color: theme.primary, marginTop: 5 }}>
+                      Save for later
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* 🗑 DELETE */}
                 <TouchableOpacity
-                  style={styles.quantityButton}
-                  onPress={() => updateQuantity(item._id, item.quantity - 1)}
+                  style={{ padding: 10 }}
+                  onPress={() => handleDelete(item._id)}
                 >
-                  <Minus size={20} color={theme.text} />
-                </TouchableOpacity>
-
-                <Text style={styles.quantity}>
-                  {item.quantity}
-                </Text>
-
-                <TouchableOpacity
-                  style={styles.quantityButton}
-                  onPress={() => updateQuantity(item._id, item.quantity + 1)}
-                >
-                  <Plus size={20} color={theme.text} />
+                  <Trash2 size={22} color="red" />
                 </TouchableOpacity>
               </View>
+            ))}
+          </>
+        )}
 
-              {/* ✅ MOVE TO SAVED */}
-              <TouchableOpacity
-                onPress={() => moveItem(item._id, true)}
-              >
-                <Text style={{ color: theme.primary, marginTop: 5 }}>
-                  Save for later
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        ))}
-
-        {/* 🟡 SAVED ITEMS */}
+        {/* 🟡 SAVED */}
         {savedItems.length > 0 && (
           <>
             <Text style={styles.sectionTitle}>Saved for Later</Text>
@@ -204,16 +218,15 @@ export default function Bag() {
             {savedItems.map((item) => (
               <View key={item._id} style={styles.bagItem}>
                 <Image
-                  source={{ uri: item.productId.images[0] }}
+                  source={{ uri: item.productId?.images?.[0] }}
                   style={styles.itemImage}
                 />
 
                 <View style={styles.itemInfo}>
                   <Text style={styles.itemName}>
-                    {item.productId.name}
+                    {item.productId?.name}
                   </Text>
 
-                  {/* ✅ MOVE BACK */}
                   <TouchableOpacity
                     onPress={() => moveItem(item._id, false)}
                   >
@@ -222,13 +235,21 @@ export default function Bag() {
                     </Text>
                   </TouchableOpacity>
                 </View>
+
+                {/* 🗑 DELETE */}
+                <TouchableOpacity
+                  style={{ padding: 10 }}
+                  onPress={() => handleDelete(item._id)}
+                >
+                  <Trash2 size={22} color="red" />
+                </TouchableOpacity>
               </View>
             ))}
           </>
         )}
       </ScrollView>
 
-      {/* ✅ FOOTER */}
+      {/* FOOTER */}
       <View style={styles.footer}>
         <View style={styles.totalContainer}>
           <Text style={styles.totalLabel}>Total Amount</Text>
@@ -349,9 +370,6 @@ const createStyles = (theme: any) =>
     quantity: {
       color: theme.text,
       marginHorizontal: 15,
-    },
-    removeButton: {
-      marginLeft: "auto",
     },
     footer: {
       padding: 15,

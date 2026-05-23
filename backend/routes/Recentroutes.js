@@ -3,40 +3,63 @@ const Recent = require("../models/Recent");
 
 const router = express.Router();
 
-// ✅ test route
+// ✅ TEST ROUTE
 router.get("/test", (req, res) => {
   res.send("Recent route working");
 });
 
-// ✅ ADD / UPDATE recent (no duplicates)
+// ✅ ADD / UPDATE RECENT (IDEMPOTENT + LIMIT 20)
 router.post("/", async (req, res) => {
-  const { userId, productId } = req.body;
-
   try {
-    // remove duplicate if exists
+    const { userId, productId } = req.body;
+
+    if (!userId || !productId) {
+      return res.status(400).json({ message: "Missing fields" });
+    }
+
+    // 🔥 REMOVE DUPLICATE (if exists)
     await Recent.findOneAndDelete({ userId, productId });
 
-    // create new (latest)
-    const newRecent = await Recent.create({ userId, productId });
+    // ✅ CREATE NEW (latest)
+    await Recent.create({
+      userId,
+      productId,
+      createdAt: new Date(),
+    });
 
-    res.json(newRecent);
+    // 🔥 ENFORCE MAX 20 (IMPORTANT FOR TASK)
+    const allRecents = await Recent.find({ userId })
+      .sort({ createdAt: -1 });
+
+    if (allRecents.length > 20) {
+      const extra = allRecents.slice(20); // beyond 20
+      const idsToDelete = extra.map((item) => item._id);
+
+      await Recent.deleteMany({ _id: { $in: idsToDelete } });
+    }
+
+    res.json({ message: "Recent updated" });
+
   } catch (err) {
-    console.log(err);
+    console.log("ADD RECENT ERROR:", err);
     res.status(500).json({ message: "Error adding recent" });
   }
 });
 
-// ✅ GET recents (FIXED)
+// ✅ GET RECENTS (SORTED + POPULATED)
 router.get("/:userId", async (req, res) => {
   try {
-    const recents = await Recent.find({ userId: req.params.userId })
+    const recents = await Recent.find({
+      userId: req.params.userId,
+    })
       .sort({ createdAt: -1 }) // latest first
-      .limit(20) // ✅ max 20 (requirement)
-      .populate("productId"); // ✅ VERY IMPORTANT
+      .limit(20) // ✅ strict limit
+      .populate("productId");
 
-    res.json(recents); // ✅ FIX: DO NOT map()
+    res.json(recents);
+
   } catch (err) {
-    console.log(err);
+    console.log("GET RECENT ERROR:", err);
     res.status(500).json({ message: "Error fetching recents" });
   }
 });

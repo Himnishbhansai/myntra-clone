@@ -16,6 +16,7 @@ import { Heart, ShoppingBag } from "lucide-react-native";
 import React from "react";
 import { useAuth } from "@/context/AuthContext";
 import axios from "axios";
+import { addRecentlyViewed } from "@/utils/recentlyViewed";
 
 export default function ProductDetails() {
   const { id } = useLocalSearchParams();
@@ -72,11 +73,16 @@ export default function ProductDetails() {
   };
 
   // ✅ SAVE TO RECENTS
-  useEffect(() => {
-    const addRecent = async () => {
-      if (!user || !id) return;
+useEffect(() => {
+  const addRecent = async () => {
+    if (!id || !product) return;
 
-      try {
+    try {
+      // ✅ ALWAYS save locally (guest + logged in)
+      await addRecentlyViewed(product);
+
+      // ✅ ONLY save to server if logged in
+      if (user) {
         await axios.post(
           "https://myntra-clone-7tse.onrender.com/recent",
           {
@@ -84,13 +90,14 @@ export default function ProductDetails() {
             productId: id,
           }
         );
-      } catch (err) {
-        console.log(err);
       }
-    };
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
-    addRecent();
-  }, [id, user]);
+  addRecent();
+}, [id, product, user]);
 
   // 🔥 FETCH RECOMMENDATIONS
   useEffect(() => {

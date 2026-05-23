@@ -36,12 +36,9 @@ export default function Home() {
   const [categories, setcategories] = useState<any>(null);
   const { user } = useAuth();
   const handleProductPress = (productId: number) => {
-    if (!user) {
-      router.push("/login");
-    } else {
-      router.push(`/product/${productId}`);
-    }
-  };
+  // ✅ ALWAYS allow navigation
+  router.push(`/product/${productId}`);
+};
 
 const {
     theme,
