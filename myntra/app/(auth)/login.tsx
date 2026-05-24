@@ -12,22 +12,22 @@ import { useRouter } from "expo-router";
 import React from "react";
 import { Eye, EyeOff } from "lucide-react-native";
 import { useAuth } from "@/context/AuthContext";
-import { registerForPushNotifications } from "@/utils/notifications"; // ✅ ADD
+import { registerForPushNotifications } from "@/utils/notifications";
 
 export default function Login() {
-  const { login, user } = useAuth(); // ✅ GET USER
+  const { login, user } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [isloading, setisloading] = useState(false);
 
-  // ✅ AUTO REGISTER TOKEN AFTER LOGIN
+  // ✅ REGISTER TOKEN ONLY ONCE AFTER LOGIN
   useEffect(() => {
     if (user?._id) {
       registerForPushNotifications(user._id);
     }
-  }, [user]);
+  }, [user?._id]);
 
   const handleLogin = async () => {
     try {
