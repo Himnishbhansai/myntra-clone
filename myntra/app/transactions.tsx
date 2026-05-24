@@ -9,10 +9,13 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "expo-router";
+import { useTheme } from "@/context/ThemeContext"; // ✅ ADD
+import { CreditCard } from "lucide-react-native";
 
 export default function Transactions() {
   const { user } = useAuth();
   const router = useRouter();
+  const { theme } = useTheme(); // ✅ ADD
 
   const [data, setData] = useState<any>([]);
   const [loading, setLoading] = useState(true);
@@ -37,19 +40,18 @@ export default function Transactions() {
   }, [user]);
 
   if (loading)
-    return <ActivityIndicator size="large" color="#ff3f6c" />;
+    return <ActivityIndicator size="large" color={"#ff3f6c"} />;
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: "#121212", padding: 20 }}>
-      
+    <ScrollView style={{ flex: 1, backgroundColor: theme.background, padding: 20 }}>
       {/* 🔥 HEADER */}
       <Text style={{
-        color: "#fff",
+        color: theme.text,
         fontSize: 26,
         fontWeight: "bold",
         marginBottom: 15,
       }}>
-        💳 My Transactions
+       My Transactions  <CreditCard size={32} color={"#ff3f6c"} />
       </Text>
 
       {/* 🔗 GO TO ORDERS */}
@@ -63,7 +65,7 @@ export default function Transactions() {
           alignItems: "center",
         }}
       >
-        <Text style={{ color: "#fff", fontWeight: "600" }}>
+        <Text style={{ color: theme.textInverse, fontWeight: "600" }}>
           View Orders →
         </Text>
       </TouchableOpacity>
@@ -75,27 +77,29 @@ export default function Transactions() {
           window.open(url);
         }}
         style={{
-          backgroundColor: "#00bcd4",
+          backgroundColor: theme.secondary || "#ff3f6c",
           padding: 12,
           borderRadius: 10,
           marginBottom: 20,
           alignItems: "center",
         }}
       >
-        <Text style={{ color: "#fff", fontWeight: "600" }}>
+        <Text style={{ color: theme.textInverse, fontWeight: "600" }}>
           Export CSV ↓
         </Text>
       </TouchableOpacity>
 
       {/* 📦 TRANSACTIONS */}
       {data.length === 0 ? (
-        <Text style={{ color: "#aaa" }}>No transactions yet</Text>
+        <Text style={{ color: theme.secondaryText }}>
+          No transactions yet
+        </Text>
       ) : (
         data.map((item: any) => (
           <View
             key={item._id}
             style={{
-              backgroundColor: "#1e1e1e",
+              backgroundColor: theme.card,
               padding: 15,
               borderRadius: 12,
               marginBottom: 15,
@@ -103,7 +107,7 @@ export default function Transactions() {
           >
             {/* 💰 AMOUNT */}
             <Text style={{
-              color: "#fff",
+              color: theme.text,
               fontSize: 18,
               fontWeight: "bold",
             }}>
@@ -114,22 +118,22 @@ export default function Transactions() {
             <Text style={{
               color:
                 item.status === "success"
-                  ? "#00e676"
+                  ? theme.success || "green"
                   : item.status === "failed"
-                  ? "#ff5252"
-                  : "#ffb300",
+                  ? theme.error || "red"
+                  : theme.warning || "#ff3f6c",
               marginTop: 5,
             }}>
               Status: {item.status}
             </Text>
 
             {/* 💳 METHOD */}
-            <Text style={{ color: "#bbb", marginTop: 5 }}>
+            <Text style={{ color: theme.secondaryText, marginTop: 5 }}>
               Method: {item.paymentMethod}
             </Text>
 
             {/* 🕒 DATE */}
-            <Text style={{ color: "#777", marginTop: 5 }}>
+            <Text style={{ color: theme.mutedText || theme.secondaryText, marginTop: 5 }}>
               {new Date(item.createdAt).toLocaleString()}
             </Text>
 
@@ -141,18 +145,18 @@ export default function Transactions() {
               }}
               style={{
                 marginTop: 10,
-                backgroundColor: "#673ab7",
+                backgroundColor: "#ff3f6c",
                 padding: 8,
                 borderRadius: 6,
                 alignItems: "center",
               }}
             >
-              <Text style={{ color: "#fff", fontSize: 12 }}>
+              <Text style={{ color: theme.textInverse, fontSize: 12 }}>
                 Download Receipt 📄
               </Text>
             </TouchableOpacity>
 
-            {/* 🔥 LOGS / TIMELINE */}
+            {/* 🔥 LOGS */}
             {item.logs && item.logs.length > 0 && (
               <View style={{
                 marginTop: 10,
@@ -162,11 +166,11 @@ export default function Transactions() {
               }}>
                 {item.logs.map((log: any, index: number) => (
                   <View key={index} style={{ marginBottom: 8 }}>
-                    <Text style={{ color: "#fff", fontSize: 13 }}>
+                    <Text style={{ color: theme.text, fontSize: 13 }}>
                       • {log.status} - {log.message}
                     </Text>
                     <Text style={{
-                      color: "#888",
+                      color: theme.secondaryText,
                       fontSize: 11,
                     }}>
                       {new Date(log.timestamp).toLocaleString()}

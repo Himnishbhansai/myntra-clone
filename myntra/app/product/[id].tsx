@@ -15,6 +15,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Heart, ShoppingBag } from "lucide-react-native";
 import React from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext"
 import axios from "axios";
 import { addRecentlyViewed } from "@/utils/recentlyViewed";
 
@@ -23,6 +24,7 @@ export default function ProductDetails() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const { user } = useAuth();
+  const { theme } = useTheme(); // ✅ ADD
 
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";

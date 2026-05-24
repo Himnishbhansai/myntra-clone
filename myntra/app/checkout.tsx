@@ -73,7 +73,7 @@ export default function Checkout() {
         {/* Shipping */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <MapPin size={24} color={theme.primary} />
+            <MapPin size={24} color={"#ff3f6c"} />
             <Text style={styles.sectionTitle}>
               Shipping Address
             </Text>
@@ -138,7 +138,7 @@ export default function Checkout() {
         {/* Payment */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <CreditCard size={24} color={theme.primary} />
+            <CreditCard size={24} color={"#ff3f6c"} />
             <Text style={styles.sectionTitle}>
               Payment Method
             </Text>
@@ -173,7 +173,7 @@ export default function Checkout() {
         {/* Summary */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Truck size={24} color={theme.primary} />
+            <Truck size={24} color={"#ff3f6c"} />
             <Text style={styles.sectionTitle}>
               Order Summary
             </Text>
@@ -325,7 +325,7 @@ const createStyles = (theme: any) =>
     totalValue: {
       fontSize: 18,
       fontWeight: "bold",
-      color: theme.primary,
+      color: "#ff3f6c",
     },
 
     footer: {
@@ -336,14 +336,14 @@ const createStyles = (theme: any) =>
     },
 
     placeOrderButton: {
-      backgroundColor: theme.primary,
+      backgroundColor: "#ff3f6c",
       padding: 15,
       borderRadius: 10,
       alignItems: "center",
     },
 
     placeOrderButtonText: {
-      color: "#fff",
+      color: theme.text,
       fontSize: 16,
       fontWeight: "bold",
     },

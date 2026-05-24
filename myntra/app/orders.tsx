@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  useColorScheme,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -20,20 +19,19 @@ import {
 import React from "react";
 import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext"; // ✅ ADD
 
 export default function Orders() {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { theme } = useTheme(); // ✅ ADD
 
   const colors = {
-    background: isDark ? "#121212" : "#fff",
-    card: isDark ? "#1e1e1e" : "#fff",
-    text: isDark ? "#fff" : "#3e3e3e",
-    subText: isDark ? "#aaa" : "#666",
-    border: isDark ? "#333" : "#f0f0f0",
-    input: isDark ? "#2a2a2a" : "#f5f5f5",
-    greenBg: isDark ? "#143d26" : "#e6f4ea",
+    background: theme.background,
+    card: theme.card,
+    text: theme.text,
+    subText: theme.secondaryText,
+    border: theme.border || theme.secondaryText,
+    greenBg: theme.successBg || theme.card,
   };
 
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
@@ -71,7 +69,7 @@ export default function Orders() {
           { backgroundColor: colors.background },
         ]}
       >
-        <ActivityIndicator size="large" color="#ff3f6c" />
+        <ActivityIndicator size="large" color={"#ff3f6c"} />
       </View>
     );
   }
@@ -163,8 +161,8 @@ export default function Orders() {
                   { backgroundColor: colors.greenBg },
                 ]}
               >
-                <Package size={16} color="#00b852" />
-                <Text style={styles.orderStatus}>
+                <Package size={16} color={theme.success || "#ff3f6c"} />
+                <Text style={[styles.orderStatus, { color: theme.success || "#ff3f6c" }]}>
                   {order.status}
                 </Text>
               </View>
@@ -221,10 +219,7 @@ export default function Orders() {
               >
                 <View style={styles.detailSection}>
                   <View style={styles.detailHeader}>
-                    <MapPin
-                      size={20}
-                      color={colors.text}
-                    />
+                    <MapPin size={20} color={colors.text} />
                     <Text
                       style={[
                         styles.detailTitle,
@@ -247,10 +242,7 @@ export default function Orders() {
 
                 <View style={styles.detailSection}>
                   <View style={styles.detailHeader}>
-                    <CreditCard
-                      size={20}
-                      color={colors.text}
-                    />
+                    <CreditCard size={20} color={colors.text} />
                     <Text
                       style={[
                         styles.detailTitle,
@@ -274,11 +266,7 @@ export default function Orders() {
                 {order.tracking && (
                   <View style={styles.detailSection}>
                     <View style={styles.detailHeader}>
-                      <Truck
-                        size={20}
-                        color={colors.text}
-                      />
-
+                      <Truck size={20} color={colors.text} />
                       <Text
                         style={[
                           styles.detailTitle,
@@ -334,7 +322,7 @@ export default function Orders() {
                   toggleOrderDetails(order._id)
                 }
               >
-                <Text style={styles.detailsButtonText}>
+                <Text style={[styles.detailsButtonText, { color: "#ff3f6c" }]}>
                   {expandedOrder === order._id
                     ? "Hide Details"
                     : "View Details"}
@@ -342,7 +330,7 @@ export default function Orders() {
 
                 <ChevronRight
                   size={20}
-                  color="#ff3f6c"
+                  color={"#ff3f6c"}
                 />
               </TouchableOpacity>
             </View>
@@ -354,39 +342,31 @@ export default function Orders() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-
+  container: { flex: 1 },
   loaderContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
-
   header: {
     padding: 15,
     paddingTop: 50,
     borderBottomWidth: 1,
   },
-
   headerTitle: {
     fontSize: 24,
     fontWeight: "bold",
   },
-
   content: {
     flex: 1,
     padding: 15,
   },
-
   orderCard: {
     borderRadius: 10,
     marginBottom: 15,
     overflow: "hidden",
     elevation: 5,
   },
-
   orderHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -394,16 +374,13 @@ const styles = StyleSheet.create({
     padding: 15,
     borderBottomWidth: 1,
   },
-
   orderId: {
     fontSize: 16,
     fontWeight: "bold",
   },
-
   orderDate: {
     fontSize: 14,
   },
-
   statusContainer: {
     flexDirection: "row",
     paddingHorizontal: 10,
@@ -411,98 +388,77 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     alignItems: "center",
   },
-
   orderStatus: {
-    color: "#00b852",
     marginLeft: 5,
   },
-
   itemsContainer: {
     padding: 15,
   },
-
   orderItem: {
     flexDirection: "row",
     marginBottom: 15,
   },
-
   itemImage: {
     width: 80,
     height: 100,
     borderRadius: 5,
   },
-
   itemInfo: {
     flex: 1,
     marginLeft: 15,
   },
-
   brandName: {
     fontSize: 14,
   },
-
   itemName: {
     fontSize: 16,
   },
-
   itemPrice: {
     fontSize: 16,
     fontWeight: "bold",
   },
-
   orderDetails: {
     padding: 15,
     borderTopWidth: 1,
   },
-
   detailSection: {
     marginBottom: 20,
   },
-
   detailHeader: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 10,
   },
-
   detailTitle: {
     marginLeft: 10,
     fontWeight: "bold",
     fontSize: 16,
   },
-
   detailText: {
     fontSize: 14,
   },
-
   orderFooter: {
     padding: 15,
     borderTopWidth: 1,
   },
-
   totalContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 10,
   },
-
   totalLabel: {
     fontSize: 16,
   },
-
   totalAmount: {
     fontSize: 18,
     fontWeight: "bold",
   },
-
   detailsButton: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
   },
-
   detailsButtonText: {
-    color: "#ff3f6c",
     marginRight: 5,
     fontSize: 16,
   },

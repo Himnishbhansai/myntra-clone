@@ -167,7 +167,7 @@ export default function Bag() {
         </View>
 
         <View style={styles.emptyState}>
-          <ShoppingBag size={64} color={theme.primary} />
+          <ShoppingBag size={64} color={"#ff3f6c"} />
           <Text style={styles.emptyTitle}>
             Please login to view your bag
           </Text>
@@ -186,7 +186,7 @@ export default function Bag() {
   if (isLoading) {
     return (
       <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color={theme.primary} />
+        <ActivityIndicator size="large" color={"#ff3f6c"} />
       </View>
     );
   }
@@ -265,7 +265,7 @@ export default function Bag() {
                     <TouchableOpacity
                       onPress={() => moveItem(item._id, true)}
                     >
-                      <Text style={{ color: theme.primary }}>
+                      <Text style={{ color: "#ff3f6c" }}>
                         Save for later
                       </Text>
                     </TouchableOpacity>
@@ -351,7 +351,7 @@ const createStyles = (theme: any) =>
       color: theme.text,
     },
     loginButton: {
-      backgroundColor: theme.primary,
+      backgroundColor: "#ff3f6c",
       paddingHorizontal: 40,
       paddingVertical: 15,
       borderRadius: 10,
@@ -422,7 +422,7 @@ const createStyles = (theme: any) =>
       fontSize: 18,
     },
     checkoutButton: {
-      backgroundColor: theme.primary,
+      backgroundColor: "#ff3f6c",
       padding: 15,
       borderRadius: 10,
       alignItems: "center",

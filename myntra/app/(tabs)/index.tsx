@@ -410,7 +410,7 @@ alignItems:"center"
 },
 
 viewAllText:{
-color:theme.primary,
+color:"#ff3f6c",
 marginRight:5
 },
 
@@ -537,7 +537,7 @@ marginRight:8
 
 discount:{
 fontSize:14,
-color:theme.primary,
+color:"#ff3f6c",
 fontWeight:"500"
 },
 

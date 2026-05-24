@@ -68,7 +68,7 @@ export default function Profile() {
         </View>
 
         <View style={dynamicStyles.emptyState}>
-          <User size={64} color={theme.primary} />
+          <User size={64} color={"#ff3f6c"} />
 
           <Text style={dynamicStyles.emptyTitle}>
             Please login to view your profile
@@ -77,7 +77,7 @@ export default function Profile() {
           <TouchableOpacity
             style={[
               dynamicStyles.loginButton,
-              { backgroundColor: theme.primary },
+              { backgroundColor: "#ff3f6c" },
             ]}
             onPress={() => router.push("/login")}
           >

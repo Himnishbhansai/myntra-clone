@@ -71,7 +71,7 @@ export default function Wishlist() {
         <View style={styles.emptyState}>
           <Heart
             size={64}
-            color={theme.primary}
+            color={"#ff3f6c"}
           />
 
           <Text style={styles.emptyTitle}>
@@ -106,7 +106,7 @@ export default function Wishlist() {
       >
         <ActivityIndicator
           size="large"
-          color={theme.primary}
+          color={"#ff3f6c"}
         />
       </View>
     );
@@ -206,7 +206,7 @@ const createStyles = (
 
     loginButton: {
       backgroundColor:
-        theme.primary,
+        "#ff3f6c",
 
       paddingHorizontal: 40,
 
@@ -299,7 +299,7 @@ const createStyles = (
       fontSize: 14,
 
       color:
-        theme.primary,
+        "#ff3f6c",
     },
 
     removeButton: {
