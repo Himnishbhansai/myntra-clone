@@ -15,47 +15,49 @@ router.get("/:userId/:productId", async (req, res) => {
 
     const category = currentProduct.category;
 
-    // 🔥 A = RECENTLY VIEWED
+    // 🔥 WISHLIST
+    const wishlist = await Wishlist.find({ userId }).populate("productId");
+    const W = wishlist.map((w) => w.productId).filter(Boolean);
+
+    // 🔥 BAG
+    const bag = await Bag.find({ userId }).populate("productId");
+    const B = bag.map((b) => b.productId).filter(Boolean);
+
+    // 🔥 UNION (wishlist ∪ bag)
+    const WB_map = new Map();
+    [...W, ...B].forEach((p) => {
+      if (p) WB_map.set(p._id.toString(), p);
+    });
+    const WB = Array.from(WB_map.values());
+
+    // 🔥 INTERSECTION with CATEGORY
+    const WB_ids = WB.map((p) => p._id);
+
+    const WB_intersect_C = await Product.find({
+      _id: { $in: WB_ids, $ne: productId },
+      category,
+    });
+
+    // 🔥 RECENTLY VIEWED
     const recent = await Recent.find({ userId })
       .sort({ createdAt: -1 })
       .limit(50)
       .populate("productId");
 
-    const A = recent
-      .map((r) => r.productId)
-      .filter(Boolean);
+    const A = recent.map((r) => r.productId).filter(Boolean);
 
-    // 🔥 B = WISHLIST
-    const wishlist = await Wishlist.find({ userId }).populate("productId");
+    // 🔥 FINAL UNION
+    const finalMap = new Map();
 
-    const B = wishlist
-      .map((w) => w.productId)
-      .filter(Boolean);
-
-    // 🔥 C = SAME CATEGORY PRODUCTS
-    const C = await Product.find({
-      category,
-      _id: { $ne: productId },
-    });
-
-    // 🔥 A ∩ C
-    const A_ids = new Set(A.map((p) => p._id.toString()));
-    const A_intersect_C = C.filter((p) =>
-      A_ids.has(p._id.toString())
-    );
-
-    // 🔥 B ∪ (A ∩ C)
-    const map = new Map();
-
-    [...B, ...A_intersect_C].forEach((p) => {
+    [...WB_intersect_C, ...A].forEach((p) => {
       if (p && p._id.toString() !== productId) {
-        map.set(p._id.toString(), p);
+        finalMap.set(p._id.toString(), p);
       }
     });
 
-    let recommendations = Array.from(map.values());
+    let recommendations = Array.from(finalMap.values());
 
-    // 🔥 LIMIT + FALLBACK
+    // 🔥 FALLBACK
     if (recommendations.length < 10) {
       const existingIds = recommendations.map((p) => p._id);
 
