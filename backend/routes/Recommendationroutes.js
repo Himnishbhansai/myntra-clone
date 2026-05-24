@@ -1,6 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const Product = require("../models/Product");
+const Recent = require("../models/Recent");
+const Wishlist = require("../models/Wishlist");
+const Bag = require("../models/Bag");
 
 // 🔥 SMART RECOMMENDATION ENGINE
 router.get("/:productId", async (req, res) => {
@@ -15,14 +18,47 @@ router.get("/:productId", async (req, res) => {
 
     const { category, price, name } = currentProduct;
 
-    // 🔥 extract keywords (item type)
-    const keywords = name.split(" ");
+    // 🔥 extract keywords (better than single word)
+    const keywords = name.split(" ").filter((k) => k.length > 2);
 
-    // 🔥 1. SIMILAR TYPE (name match)
+    // 🔥 USER CONTEXT (lightweight, no structure change)
+    let wishlistIds = [];
+    let bagIds = [];
+    let recentIds = [];
+
+    if (req.query.userId) {
+      const userId = req.query.userId;
+
+      const wishlist = await Wishlist.find({ userId });
+      wishlistIds = wishlist.map((w) => w.productId.toString());
+
+      const bag = await Bag.find({ userId });
+      bagIds = bag.map((b) => b.productId.toString());
+
+      const recent = await Recent.find({ userId }).limit(50);
+      recentIds = recent.map((r) => r.productId.toString());
+    }
+
+    const priorityIds = new Set([
+      ...wishlistIds,
+      ...bagIds,
+      ...recentIds,
+    ]);
+
+    // 🔥 1. SIMILAR TYPE (multi-keyword match)
     let recommendations = await Product.find({
       _id: { $ne: productId },
-      name: { $regex: keywords[0], $options: "i" }, // loose match
-    }).limit(6);
+      $or: keywords.map((k) => ({
+        name: { $regex: k, $options: "i" },
+      })),
+    }).limit(10);
+
+    // 🔥 BOOST: move priority items to top
+    recommendations.sort((a, b) => {
+      const aScore = priorityIds.has(a._id.toString()) ? 1 : 0;
+      const bScore = priorityIds.has(b._id.toString()) ? 1 : 0;
+      return bScore - aScore;
+    });
 
     // 🔥 2. SIMILAR PRICE RANGE (±300)
     if (recommendations.length < 6) {
@@ -48,7 +84,7 @@ router.get("/:productId", async (req, res) => {
       recommendations = [...recommendations, ...categoryBased];
     }
 
-    // 🔥 4. FINAL FALLBACK (anything)
+    // 🔥 4. FINAL FALLBACK
     if (recommendations.length < 6) {
       const existingIds = recommendations.map((p) => p._id);
 
@@ -59,7 +95,7 @@ router.get("/:productId", async (req, res) => {
       recommendations = [...recommendations, ...fallback];
     }
 
-    res.status(200).json(recommendations);
+    res.status(200).json(recommendations.slice(0, 6));
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Error fetching recommendations" });
