@@ -1,13 +1,17 @@
 const express = require("express");
 const router = express.Router();
-const Product = require("../models/Product");
-const Recent = require("../models/Recent"); // browsing history
-const Wishlist = require("../models/Wishlist"); // if you have this
 
+const Product = require("../models/Product");
+const Recent = require("../models/Recent");
+const Wishlist = require("../models/Wishlist");
+const Bag = require("../models/Bag"); // 🔥 YOU MISSED THIS
+
+// 🔥 MAIN RECOMMENDATION ROUTE
 router.get("/:userId/:productId", async (req, res) => {
   try {
     const { userId, productId } = req.params;
 
+    // 🔥 CURRENT PRODUCT
     const currentProduct = await Product.findById(productId);
     if (!currentProduct) {
       return res.status(404).json({ message: "Product not found" });
@@ -38,7 +42,7 @@ router.get("/:userId/:productId", async (req, res) => {
       category,
     });
 
-    // 🔥 RECENTLY VIEWED
+    // 🔥 RECENTLY VIEWED (last 50)
     const recent = await Recent.find({ userId })
       .sort({ createdAt: -1 })
       .limit(50)
@@ -57,7 +61,7 @@ router.get("/:userId/:productId", async (req, res) => {
 
     let recommendations = Array.from(finalMap.values());
 
-    // 🔥 FALLBACK
+    // 🔥 FALLBACK (POPULAR / RANDOM)
     if (recommendations.length < 10) {
       const existingIds = recommendations.map((p) => p._id);
 
@@ -68,11 +72,19 @@ router.get("/:userId/:productId", async (req, res) => {
       recommendations = [...recommendations, ...fallback];
     }
 
-    res.json(recommendations.slice(0, 10));
+    res.status(200).json(recommendations.slice(0, 10));
   } catch (error) {
-    console.log(error);
+    console.log("RECOMMEND ERROR:", error);
     res.status(500).json({ message: "Error fetching recommendations" });
   }
+});
+
+
+// 🔥 FALLBACK ROUTE (prevents 404 confusion)
+router.get("/:productId", async (req, res) => {
+  return res.status(400).json({
+    message: "UserId required. Use /recommend/:userId/:productId",
+  });
 });
 
 module.exports = router;
