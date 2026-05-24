@@ -8,7 +8,7 @@ const cors = require("cors");
 const cron = require("node-cron");
 const Bag = require("./models/Bag");
 const User = require("./models/User");
-const { sendPushNotification } = require("@/myntra/utils/notifications");
+const { sendPushNotification } = require("../myntra/utils/notifications");
 
 const app = express();
 
