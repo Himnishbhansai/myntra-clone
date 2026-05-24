@@ -3,8 +3,6 @@ const Bag = require("../models/Bag");
 const Order = require("../models/Order");
 const Transaction = require("../models/Transaction");
 const Product = require("../models/Product");
-const User = require("../models/User"); // ✅ ADD THIS
-const { sendPushNotification } = require("../utils/notifications"); // ✅ ADD THIS
 
 const router = express.Router();
 
@@ -54,37 +52,40 @@ router.post("/create/:userId", async (req, res) => {
       return res.status(400).json({ message: "No item in the bag" });
     }
 
-    // 🔥 VALIDATION
+    // 🔥 PARTIAL CHECKOUT LOGIC
     const validItems = [];
     const failedItems = [];
 
     for (let item of bag) {
-      const product = item.productId;
+  const product = item.productId;
 
-      if (!product) {
-        failedItems.push({
-          name: "Unknown product",
-          reason: "Removed",
-        });
-        continue;
-      }
+  if (!product) {
+    failedItems.push({
+      name: "Unknown product",
+      reason: "Removed",
+    });
+    continue;
+  }
 
-      if (product.stock < item.quantity) {
-        failedItems.push({
-          name: product.name,
-          reason: "Out of stock",
-        });
-        continue;
-      }
+  // ❌ ONLY BLOCK OUT OF STOCK
+  if (product.stock < item.quantity) {
+    failedItems.push({
+      name: product.name,
+      reason: "Out of stock",
+    });
+    continue;
+  }
 
-      validItems.push({
-        productId: product._id,
-        size: item.size,
-        price: item.priceAtAdd || product.price,
-        quantity: item.quantity,
-      });
-    }
+  // ✅ ALLOW price change → use locked price
+  validItems.push({
+    productId: product._id,
+    size: item.size,
+    price: item.priceAtAdd || product.price, // 🔥 KEY FIX
+    quantity: item.quantity,
+  });
+}
 
+    // ❌ nothing valid
     if (validItems.length === 0) {
       return res.status(400).json({
         message: "No valid items to order",
@@ -92,6 +93,7 @@ router.post("/create/:userId", async (req, res) => {
       });
     }
 
+    // ✅ TOTAL
     const total = validItems.reduce(
       (sum, item) => sum + item.price * item.quantity,
       0
@@ -131,7 +133,7 @@ router.post("/create/:userId", async (req, res) => {
       ],
     });
 
-    // 🔥 REMOVE ITEMS FROM BAG
+    // 🔥 REMOVE ONLY VALID ITEMS FROM BAG
     const validProductIds = validItems.map((i) =>
       i.productId.toString()
     );
@@ -142,27 +144,11 @@ router.post("/create/:userId", async (req, res) => {
       productId: { $in: validProductIds },
     });
 
-    // ================== 🔥 PUSH NOTIFICATION ==================
-    try {
-      const user = await User.findById(userid);
-
-      if (user?.expoPushToken) {
-        await sendPushNotification(
-          user.expoPushToken,
-          "Order Confirmed 🎉",
-          "Your order has been placed successfully!"
-        );
-      }
-    } catch (notifErr) {
-      console.log("Notification error:", notifErr);
-    }
-    // ==========================================================
-
     // ✅ RESPONSE
     res.status(200).json({
       message: "Order placed successfully",
       order: newOrder,
-      failedItems,
+      failedItems, // 🔥 frontend will use this
     });
 
   } catch (error) {
