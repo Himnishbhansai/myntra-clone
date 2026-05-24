@@ -5,11 +5,10 @@ const Recent = require("../models/Recent");
 const Wishlist = require("../models/Wishlist");
 const Bag = require("../models/Bag");
 
-// 🔥 RECOMMENDATION ENGINE (YOUR LOGIC)
 router.get("/:productId", async (req, res) => {
   try {
     const productId = req.params.productId;
-    const userId = req.query.userId; // optional but needed
+    const userId = req.query.userId;
 
     const currentProduct = await Product.findById(productId);
     if (!currentProduct) {
@@ -18,35 +17,29 @@ router.get("/:productId", async (req, res) => {
 
     const category = currentProduct.category;
 
-    let finalMap = new Map();
+    const finalMap = new Map(); // 🔥 single source of truth
 
     if (userId) {
       // 🔥 WISHLIST
       const wishlist = await Wishlist.find({ userId }).populate("productId");
-      const W = wishlist.map((w) => w.productId).filter(Boolean);
 
       // 🔥 BAG
       const bag = await Bag.find({ userId }).populate("productId");
-      const B = bag.map((b) => b.productId).filter(Boolean);
 
-      // 🔥 UNION (W ∪ B)
-      const WB_map = new Map();
-      [...W, ...B].forEach((p) => {
-        if (p) WB_map.set(p._id.toString(), p);
-      });
-      const WB = Array.from(WB_map.values());
-
-      // 🔥 INTERSECTION with CATEGORY → (W ∪ B) ∩ C
-      WB.forEach((p) => {
+      // 🔥 (Wishlist ∪ Bag)
+      [...wishlist, ...bag].forEach((item) => {
+        const p = item.productId;
         if (
+          p &&
           p.category === category &&
-          p._id.toString() !== productId
+          p._id.toString() !== productId &&
+          !finalMap.has(p._id.toString()) // 🔥 NO DUP
         ) {
           finalMap.set(p._id.toString(), p);
         }
       });
 
-      // 🔥 RECENTLY VIEWED (A)
+      // 🔥 Recently Viewed
       const recent = await Recent.find({ userId })
         .sort({ createdAt: -1 })
         .limit(50)
@@ -54,7 +47,11 @@ router.get("/:productId", async (req, res) => {
 
       recent.forEach((r) => {
         const p = r.productId;
-        if (p && p._id.toString() !== productId) {
+        if (
+          p &&
+          p._id.toString() !== productId &&
+          !finalMap.has(p._id.toString()) // 🔥 NO DUP
+        ) {
           finalMap.set(p._id.toString(), p);
         }
       });
@@ -62,7 +59,7 @@ router.get("/:productId", async (req, res) => {
 
     let recommendations = Array.from(finalMap.values());
 
-    // 🔥 FALLBACK (if empty / low)
+    // 🔥 FALLBACK (also dedup-safe)
     if (recommendations.length < 6) {
       const existingIds = recommendations.map((p) => p._id);
 
@@ -71,7 +68,13 @@ router.get("/:productId", async (req, res) => {
         category,
       }).limit(6 - recommendations.length);
 
-      recommendations = [...recommendations, ...fallback];
+      fallback.forEach((p) => {
+        if (!finalMap.has(p._id.toString())) {
+          finalMap.set(p._id.toString(), p);
+        }
+      });
+
+      recommendations = Array.from(finalMap.values());
     }
 
     res.status(200).json(recommendations.slice(0, 6));
