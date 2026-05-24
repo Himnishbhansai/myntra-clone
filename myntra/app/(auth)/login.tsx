@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -12,14 +12,23 @@ import { useRouter } from "expo-router";
 import React from "react";
 import { Eye, EyeOff } from "lucide-react-native";
 import { useAuth } from "@/context/AuthContext";
+import { registerForPushNotifications } from "@/utils/notifications"; // ✅ ADD
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, user } = useAuth(); // ✅ GET USER
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [isloading, setisloading] = useState(false);
+
+  // ✅ AUTO REGISTER TOKEN AFTER LOGIN
+  useEffect(() => {
+    if (user?._id) {
+      registerForPushNotifications(user._id);
+    }
+  }, [user]);
+
   const handleLogin = async () => {
     try {
       setisloading(true);
@@ -40,9 +49,11 @@ export default function Login() {
         }}
         style={styles.backgroundImage}
       />
+
       <View style={styles.formContainer}>
         <Text style={styles.title}>Welcome to Myntra</Text>
         <Text style={styles.subtitle}>Login to continue shopping</Text>
+
         <TextInput
           style={styles.input}
           placeholder="Email"
@@ -51,6 +62,7 @@ export default function Login() {
           autoCapitalize="none"
           keyboardType="email-address"
         />
+
         <View style={styles.passwordContainer}>
           <TextInput
             style={styles.passwordInput}
@@ -59,6 +71,7 @@ export default function Login() {
             onChangeText={setPassword}
             secureTextEntry={!showPassword}
           />
+
           <TouchableOpacity
             style={styles.eyeIcon}
             onPress={() => setShowPassword(!showPassword)}
@@ -70,6 +83,7 @@ export default function Login() {
             )}
           </TouchableOpacity>
         </View>
+
         <TouchableOpacity
           style={styles.button}
           onPress={handleLogin}
@@ -86,7 +100,9 @@ export default function Login() {
           style={styles.signupLink}
           onPress={() => router.push("/signup")}
         >
-          <Text style={styles.signupText}>Don't have an account? Sign Up</Text>
+          <Text style={styles.signupText}>
+            Don't have an account? Sign Up
+          </Text>
         </TouchableOpacity>
       </View>
     </View>

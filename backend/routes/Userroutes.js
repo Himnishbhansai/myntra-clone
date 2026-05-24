@@ -108,4 +108,19 @@ router.post("/login", async (req, res) => {
   }
 });
 
+router.post("/save-token", async (req, res) => {
+  try {
+    const { userId, token } = req.body;
+
+    await User.findByIdAndUpdate(userId, {
+      expoPushToken: token,
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    console.log("Token save error:", err);
+    res.status(500).json({ message: "Error saving token" });
+  }
+});
+
 module.exports = router;
