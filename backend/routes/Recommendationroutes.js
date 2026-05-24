@@ -17,29 +17,27 @@ router.get("/:productId", async (req, res) => {
 
     const category = currentProduct.category;
 
-    const finalMap = new Map(); // 🔥 single source of truth
+    const finalMap = new Map(); // 🔥 dedup layer
 
     if (userId) {
-      // 🔥 WISHLIST
       const wishlist = await Wishlist.find({ userId }).populate("productId");
-
-      // 🔥 BAG
       const bag = await Bag.find({ userId }).populate("productId");
 
-      // 🔥 (Wishlist ∪ Bag)
+      // 🔥 (Wishlist ∪ Bag) ∩ Category
       [...wishlist, ...bag].forEach((item) => {
         const p = item.productId;
+
         if (
           p &&
           p.category === category &&
-          p._id.toString() !== productId &&
-          !finalMap.has(p._id.toString()) // 🔥 NO DUP
+          p._id.toString() !== productId && // ❌ remove current product
+          !finalMap.has(p._id.toString())   // ❌ no duplicates
         ) {
           finalMap.set(p._id.toString(), p);
         }
       });
 
-      // 🔥 Recently Viewed
+      // 🔥 ∪ Recently Viewed
       const recent = await Recent.find({ userId })
         .sort({ createdAt: -1 })
         .limit(50)
@@ -47,10 +45,11 @@ router.get("/:productId", async (req, res) => {
 
       recent.forEach((r) => {
         const p = r.productId;
+
         if (
           p &&
-          p._id.toString() !== productId &&
-          !finalMap.has(p._id.toString()) // 🔥 NO DUP
+          p._id.toString() !== productId && // ❌ remove current product
+          !finalMap.has(p._id.toString())   // ❌ no duplicates
         ) {
           finalMap.set(p._id.toString(), p);
         }
@@ -59,7 +58,7 @@ router.get("/:productId", async (req, res) => {
 
     let recommendations = Array.from(finalMap.values());
 
-    // 🔥 FALLBACK (also dedup-safe)
+    // 🔥 fallback (still safe)
     if (recommendations.length < 6) {
       const existingIds = recommendations.map((p) => p._id);
 
