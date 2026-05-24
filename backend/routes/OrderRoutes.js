@@ -4,7 +4,7 @@ const Order = require("../models/Order");
 const Transaction = require("../models/Transaction");
 const Product = require("../models/Product");
 const User = require("../models/User"); // ✅ NEW
-const { sendPushNotification } = require("../utils/notifications"); // ✅ NEW
+const { sendPushNotification } = require("./notifications"); // ✅ NEW
 
 const router = express.Router();
 
