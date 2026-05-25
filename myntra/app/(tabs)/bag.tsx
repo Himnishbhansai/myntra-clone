@@ -167,7 +167,7 @@ export default function Bag() {
         </View>
 
         <View style={styles.emptyState}>
-          <ShoppingBag size={64} color={"#ff3f6c"} />
+          <ShoppingBag size={64} color={theme.primary} />
           <Text style={styles.emptyTitle}>
             Please login to view your bag
           </Text>
@@ -186,7 +186,7 @@ export default function Bag() {
   if (isLoading) {
     return (
       <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color={"#ff3f6c"} />
+        <ActivityIndicator size="large" color={theme.primary} />
       </View>
     );
   }
@@ -265,7 +265,7 @@ export default function Bag() {
                     <TouchableOpacity
                       onPress={() => moveItem(item._id, true)}
                     >
-                      <Text style={{ color: "#ff3f6c" }}>
+                      <Text style={{ color: theme.primary }}>
                         Save for later
                       </Text>
                     </TouchableOpacity>
@@ -275,7 +275,7 @@ export default function Bag() {
                     style={{ padding: 10 }}
                     onPress={() => handleDelete(item._id)}
                   >
-                    <Trash2 size={22} color="red" />
+                    <Trash2 size={22} color={theme.primary} />
                   </TouchableOpacity>
                 </View>
               );
@@ -351,13 +351,13 @@ const createStyles = (theme: any) =>
       color: theme.text,
     },
     loginButton: {
-      backgroundColor: "#ff3f6c",
+      backgroundColor: theme.primary,
       paddingHorizontal: 40,
       paddingVertical: 15,
       borderRadius: 10,
     },
     loginButtonText: {
-      color: "#fff",
+      color: theme.text,
       fontWeight: "bold",
     },
     bagItem: {
@@ -422,14 +422,14 @@ const createStyles = (theme: any) =>
       fontSize: 18,
     },
     checkoutButton: {
-      backgroundColor: "#ff3f6c",
+      backgroundColor: theme.primary,
       padding: 15,
       borderRadius: 10,
       alignItems: "center",
       marginTop: 10,
     },
     checkoutButtonText: {
-      color: "#fff",
+      color: theme.text,
       fontWeight: "bold",
     },
   });

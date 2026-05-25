@@ -86,6 +86,6 @@ const getStyles = (theme: any) =>
     },
     price: {
       fontSize: 14,
-      color: "#ff3f6c",
+      color: theme.primary,
     },
   });

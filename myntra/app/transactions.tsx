@@ -40,7 +40,7 @@ export default function Transactions() {
   }, [user]);
 
   if (loading)
-    return <ActivityIndicator size="large" color={"#ff3f6c"} />;
+    return <ActivityIndicator size="large" color={ theme.primary } />;
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: theme.background, padding: 20 }}>
@@ -51,14 +51,14 @@ export default function Transactions() {
         fontWeight: "bold",
         marginBottom: 15,
       }}>
-       My Transactions  <CreditCard size={32} color={"#ff3f6c"} />
+       My Transactions  <CreditCard size={32} color={ theme.text } />
       </Text>
 
       {/* 🔗 GO TO ORDERS */}
       <TouchableOpacity
         onPress={() => router.push("/orders")}
         style={{
-          backgroundColor: "#ff3f6c",
+          backgroundColor: theme.background,
           padding: 12,
           borderRadius: 10,
           marginBottom: 15,
@@ -77,7 +77,7 @@ export default function Transactions() {
           window.open(url);
         }}
         style={{
-          backgroundColor: theme.secondary || "#ff3f6c",
+          backgroundColor: theme.background || theme.secondary,
           padding: 12,
           borderRadius: 10,
           marginBottom: 20,
@@ -118,10 +118,10 @@ export default function Transactions() {
             <Text style={{
               color:
                 item.status === "success"
-                  ? theme.success || "green"
+                  ? theme.success || theme.primary
                   : item.status === "failed"
-                  ? theme.error || "red"
-                  : theme.warning || "#ff3f6c",
+                  ? theme.error || theme.primary
+                  : theme.warning || theme.primary,
               marginTop: 5,
             }}>
               Status: {item.status}
@@ -145,7 +145,7 @@ export default function Transactions() {
               }}
               style={{
                 marginTop: 10,
-                backgroundColor: "#ff3f6c",
+                backgroundColor: theme.background,
                 padding: 8,
                 borderRadius: 6,
                 alignItems: "center",
@@ -162,7 +162,7 @@ export default function Transactions() {
                 marginTop: 10,
                 paddingLeft: 10,
                 borderLeftWidth: 2,
-                borderLeftColor: "#ff3f6c",
+                borderLeftColor: theme.border,
               }}>
                 {item.logs.map((log: any, index: number) => (
                   <View key={index} style={{ marginBottom: 8 }}>

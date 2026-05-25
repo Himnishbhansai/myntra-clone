@@ -13,6 +13,8 @@ const themes = {
     border: "#ddd",
     primary: "#ff3f6c",
     secondaryText: "#666",
+    success: "green", // ✅ ADDED
+    error: "red",     // ✅ ADDED
   },
   dark: {
     background: "#121212",
@@ -21,6 +23,8 @@ const themes = {
     border: "#333",
     primary: "#ff3f6c",
     secondaryText: "#aaa",
+    success: "green", // ✅ ADDED
+    error: "red",     // ✅ ADDED
   },
 };
 
@@ -39,7 +43,6 @@ export const ThemeProvider = ({ children }: any) => {
         if (savedMode) {
           setMode(savedMode as "light" | "dark");
         } else {
-          // ✅ auto-detect system theme ONLY if no saved preference
           const systemTheme = Appearance.getColorScheme();
           setMode(systemTheme === "dark" ? "dark" : "light");
         }
@@ -69,16 +72,15 @@ export const ThemeProvider = ({ children }: any) => {
     }
   }, [accent, isReady]);
 
-  // 🔥 ACTIVE THEME
   const baseTheme = themes[mode];
 
-  // 🔥 APPLY ACCENT (DYNAMIC PRIMARY COLOR)
+  // 🔥 FORCE PRIMARY COLOR
   const finalTheme = {
     ...baseTheme,
-    primary: accent,
+    primary: "#ff3f6c",
   };
 
-  if (!isReady) return null; // prevent flicker
+  if (!isReady) return null;
 
   return (
     <ThemeContext.Provider

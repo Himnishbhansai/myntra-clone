@@ -96,7 +96,7 @@ export default function TabTwoScreen() {
   if (isLoading) {
     return (
       <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color={"#ff3f6c"} />
+        <ActivityIndicator size="large" color={theme.primary} />
       </View>
     );
   }
@@ -350,7 +350,7 @@ const createStyles = (theme: any) =>
       padding: 15,
     },
     backButtonText: {
-      color: "#ff3f6c",
+      color: theme.primary,
       marginBottom: 10,
       fontSize: 16,
     },
@@ -396,6 +396,6 @@ const createStyles = (theme: any) =>
       marginRight: 8,
     },
     discount: {
-      color: "#ff3f6c",
+      color: theme.primary,
     },
   });

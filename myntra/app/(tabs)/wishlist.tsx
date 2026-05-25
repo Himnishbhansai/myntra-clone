@@ -17,9 +17,7 @@ import {
 export default function Wishlist() {
   const router = useRouter();
   const { user } = useAuth();
-
   const { theme } = useTheme();
-
   const styles = createStyles(theme);
 
   const [wishlist, setwishlist] = useState<any>(null);
@@ -34,11 +32,11 @@ export default function Wishlist() {
       try {
         setIsLoading(true);
 
-        const bag = await axios.get(
+        const res = await axios.get(
           `https://myntra-clone-7tse.onrender.com/wishlist/${user._id}`
         );
 
-        setwishlist(bag.data);
+        setwishlist(res.data);
       } catch (error) {
         console.log(error);
       } finally {
@@ -52,7 +50,6 @@ export default function Wishlist() {
       await axios.delete(
         `https://myntra-clone-7tse.onrender.com/wishlist/${itemid}`
       );
-
       fetchproduct();
     } catch (error) {
       console.log(error);
@@ -63,34 +60,20 @@ export default function Wishlist() {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>
-            Wishlist
-          </Text>
+          <Text style={styles.headerTitle}>Wishlist</Text>
         </View>
 
         <View style={styles.emptyState}>
-          <Heart
-            size={64}
-            color={"#ff3f6c"}
-          />
-
+          <Heart size={64} color={theme.primary} />
           <Text style={styles.emptyTitle}>
             Please login to view your wishlist
           </Text>
 
           <TouchableOpacity
             style={styles.loginButton}
-            onPress={() =>
-              router.push("/login")
-            }
+            onPress={() => router.push("/login")}
           >
-            <Text
-              style={
-                styles.loginButtonText
-              }
-            >
-              LOGIN
-            </Text>
+            <Text style={styles.loginButtonText}>LOGIN</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -99,15 +82,8 @@ export default function Wishlist() {
 
   if (isLoading) {
     return (
-      <View
-        style={
-          styles.loaderContainer
-        }
-      >
-        <ActivityIndicator
-          size="large"
-          color={"#ff3f6c"}
-        />
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color={theme.primary} />
       </View>
     );
   }
@@ -115,65 +91,78 @@ export default function Wishlist() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>
-          Wishlist
-        </Text>
+        <Text style={styles.headerTitle}>Wishlist</Text>
       </View>
 
-      <ScrollView
-        style={styles.content}
-      >
+      <ScrollView style={styles.content}>
         {wishlist?.map((item: any) => {
-  if (!item.productId) return null; // ✅ IMPORTANT FIX
+          if (!item.productId) return null;
 
-  return (
-    <TouchableOpacity
-      key={item._id}
-      onPress={() => router.push(`/product/${item.productId._id}`)}
-    >
-      <Image
-        source={{ uri: item.productId.images?.[0] }} // ✅ safe access
-        style={{ width: 150, height: 200 }}
-      />
+          return (
+            <View key={item._id} style={styles.wishlistItem}>
+              
+              {/* IMAGE */}
+              <TouchableOpacity
+                onPress={() =>
+                  router.push(`/product/${item.productId._id}`)
+                }
+              >
+                <Image
+                  source={{ uri: item.productId.images?.[0] }}
+                  style={styles.itemImage}
+                />
+              </TouchableOpacity>
 
-      <Text>{item.productId.brand}</Text>
-      <Text>{item.productId.name}</Text>
-    </TouchableOpacity>
-  );
-})}
+              {/* INFO */}
+              <View style={styles.itemInfo}>
+                <Text style={styles.brandName}>
+                  {item.productId.brand}
+                </Text>
+
+                <Text style={styles.itemName}>
+                  {item.productId.name}
+                </Text>
+
+                <Text style={styles.price}>
+                  ₹{item.productId.price}
+                </Text>
+
+                {/* BUTTONS */}
+                <View style={styles.actions}>
+                  <TouchableOpacity
+                    onPress={() => handledelete(item._id)}
+                  >
+                    <Trash2 color={theme.error} size={20} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          );
+        })}
       </ScrollView>
     </View>
   );
 }
 
-const createStyles = (
-  theme: any
-) =>
+const createStyles = (theme: any) =>
   StyleSheet.create({
     loaderContainer: {
       flex: 1,
-      justifyContent:
-        "center",
-      alignItems:
-        "center",
-      backgroundColor:
-        theme.background,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: theme.background,
     },
 
     container: {
       flex: 1,
-      backgroundColor:
-        theme.background,
+      backgroundColor: theme.background,
     },
 
     header: {
       padding: 15,
       paddingTop: 50,
-      backgroundColor:
-        theme.background,
       borderBottomWidth: 1,
-      borderBottomColor:
-        theme.border,
+      borderBottomColor: theme.border,
     },
 
     headerTitle: {
@@ -183,129 +172,89 @@ const createStyles = (
     },
 
     content: {
-      flex: 1,
       padding: 15,
+    },
+
+    wishlistItem: {
+      flexDirection: "row",
+      backgroundColor: theme.card,
+      borderRadius: 10,
+      marginBottom: 15,
+      overflow: "hidden",
+      elevation: 3,
+    },
+
+    itemImage: {
+      width: 110,
+      height: 140,
+    },
+
+    itemInfo: {
+      flex: 1,
+      padding: 12,
+      justifyContent: "space-between",
+    },
+
+    brandName: {
+      fontSize: 13,
+      color: theme.secondaryText,
+    },
+
+    itemName: {
+      fontSize: 15,
+      color: theme.text,
+      marginVertical: 5,
+    },
+
+    price: {
+      fontSize: 16,
+      fontWeight: "bold",
+      color: theme.text,
+    },
+
+    actions: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginTop: 10,
+    },
+
+    bagButton: {
+      backgroundColor: theme.primary,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 6,
+    },
+
+    bagText: {
+      color: theme.text,
+      fontSize: 12,
+      fontWeight: "bold",
     },
 
     emptyState: {
       flex: 1,
-      justifyContent:
-        "center",
-      alignItems:
-        "center",
-      padding: 20,
+      justifyContent: "center",
+      alignItems: "center",
     },
 
     emptyTitle: {
       fontSize: 18,
       color: theme.text,
       marginTop: 20,
-      marginBottom: 20,
       textAlign: "center",
     },
 
     loginButton: {
-      backgroundColor:
-        "#ff3f6c",
-
+      backgroundColor: theme.primary,
       paddingHorizontal: 40,
-
       paddingVertical: 15,
-
       borderRadius: 10,
+      marginTop: 20,
     },
 
     loginButtonText: {
-      color: "#fff",
-
-      fontSize: 16,
-
-      fontWeight: "bold",
-    },
-
-    wishlistItem: {
-      flexDirection: "row",
-
-      backgroundColor:
-        theme.card,
-
-      borderRadius: 10,
-
-      marginBottom: 15,
-
-      shadowColor: "#000",
-
-      shadowOffset: {
-        width: 0,
-        height: 2,
-      },
-
-      shadowOpacity: 0.1,
-
-      shadowRadius: 3.84,
-
-      elevation: 5,
-
-      overflow: "hidden",
-    },
-
-    itemImage: {
-      width: 100,
-
-      height: 120,
-    },
-
-    itemInfo: {
-      flex: 1,
-
-      padding: 15,
-    },
-
-    brandName: {
-      fontSize: 14,
-
-      color:
-        theme.secondaryText,
-
-      marginBottom: 5,
-    },
-
-    itemName: {
-      fontSize: 16,
-
       color: theme.text,
-
-      marginBottom: 10,
-    },
-
-    priceContainer: {
-      flexDirection: "row",
-
-      alignItems:
-        "center",
-    },
-
-    price: {
-      fontSize: 16,
-
       fontWeight: "bold",
-
-      color: theme.text,
-
-      marginRight: 10,
-    },
-
-    discount: {
-      fontSize: 14,
-
-      color:
-        "#ff3f6c",
-    },
-
-    removeButton: {
-      padding: 15,
-
-      justifyContent:
-        "center",
     },
   });

@@ -71,7 +71,7 @@ const dynamicStyles = createStyles(theme);
       <View style={dynamicStyles.header}>
         <Text style={dynamicStyles.logo}>MYNTRA</Text>
         <TouchableOpacity style={dynamicStyles.searchButton}>
-          <Search size={24} color="#3e3e3e" />
+          <Search size={24} color= {theme.text} />
         </TouchableOpacity>
       </View>
 
@@ -87,7 +87,7 @@ const dynamicStyles = createStyles(theme);
           <Text style={dynamicStyles.sectionTitle}>SHOP BY CATEGORY</Text>
           <TouchableOpacity style={dynamicStyles.viewAll}>
             <Text style={dynamicStyles.viewAllText}>View All</Text>
-            <ChevronRight size={20} color="#ff3f6c" />
+            <ChevronRight size={20} color={theme.primary} />
           </TouchableOpacity>
         </View>
         <ScrollView
@@ -98,7 +98,7 @@ const dynamicStyles = createStyles(theme);
           {isLoading ? (
             <ActivityIndicator
               size="large"
-              color="#ff3f6c"
+              color={theme.primary}
               style={dynamicStyles.loader}
             />
           ) : !categories || categories.length === 0 ? (
@@ -145,7 +145,7 @@ const dynamicStyles = createStyles(theme);
           {isLoading ? (
             <ActivityIndicator
               size="large"
-              color="#ff3f6c"
+              color={theme.primary}
               style={dynamicStyles.loader}
             />
           ) : !product || product.length === 0 ? (
@@ -181,167 +181,6 @@ const dynamicStyles = createStyles(theme);
     </ScrollView>
   );
 }
-
-/*const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 15,
-    paddingTop: 50,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-  },
-  emptyText: {
-    textAlign: "center",
-    marginTop: 20,
-    fontSize: 16,
-    color: "#666",
-  },
-  logo: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#3e3e3e",
-  },
-  searchButton: {
-    padding: 8,
-  },
-  banner: {
-    width: "100%",
-    height: 200,
-    resizeMode: "cover",
-  },
-  section: {
-    padding: 15,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 15,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#3e3e3e",
-  },
-  viewAll: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  viewAllText: {
-    color: "#ff3f6c",
-    marginRight: 5,
-  },
-  categoriesScroll: {
-    marginHorizontal: -15,
-  },
-  categoryCard: {
-    width: 100,
-    marginHorizontal: 8,
-  },
-  categoryImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-  },
-  categoryName: {
-    textAlign: "center",
-    marginTop: 8,
-    fontSize: 14,
-    color: "#3e3e3e",
-  },
-  dealsScroll: {
-    marginHorizontal: -15,
-  },
-  dealCard: {
-    width: 280,
-    height: 150,
-    marginHorizontal: 8,
-    borderRadius: 10,
-    overflow: "hidden",
-  },
-  dealImage: {
-    width: "100%",
-    height: "100%",
-  },
-  dealOverlay: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    padding: 15,
-  },
-  dealTitle: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  productsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    marginHorizontal: -8,
-  },
-  productCard: {
-    width: "48%",
-    marginHorizontal: "1%",
-    marginBottom: 15,
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  productImage: {
-    width: "100%",
-    height: 200,
-    borderTopLeftRadius: 10,
-    borderTopRightRadius: 10,
-  },
-  productInfo: {
-    padding: 10,
-  },
-  brandName: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 2,
-  },
-  productName: {
-    fontSize: 16,
-    marginBottom: 5,
-  },
-  priceRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  productPrice: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#3e3e3e",
-    marginRight: 8,
-  },
-  discount: {
-    fontSize: 14,
-    color: "#ff3f6c",
-    fontWeight: "500",
-  },
-  loader: {
-    marginTop: 50,
-  },
-});
-*/
-
 
 const createStyles = (theme:any)=>
 StyleSheet.create({
@@ -410,7 +249,7 @@ alignItems:"center"
 },
 
 viewAllText:{
-color:"#ff3f6c",
+color:theme.primary,
 marginRight:5
 },
 
@@ -463,7 +302,7 @@ padding:15
 },
 
 dealTitle:{
-color:"#fff",
+color:theme.text,
 fontSize:18,
 fontWeight:"bold"
 },
@@ -487,7 +326,7 @@ backgroundColor:theme.card,
 
 borderRadius:10,
 
-shadowColor:"#000",
+shadowColor:theme.text,
 
 shadowOffset:{
 width:0,
@@ -537,7 +376,7 @@ marginRight:8
 
 discount:{
 fontSize:14,
-color:"#ff3f6c",
+color:theme.primary,
 fontWeight:"500"
 },
 

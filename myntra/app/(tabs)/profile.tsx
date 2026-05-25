@@ -68,7 +68,7 @@ export default function Profile() {
         </View>
 
         <View style={dynamicStyles.emptyState}>
-          <User size={64} color={"#ff3f6c"} />
+          <User size={64} color={theme.primary} />
 
           <Text style={dynamicStyles.emptyTitle}>
             Please login to view your profile
@@ -77,7 +77,7 @@ export default function Profile() {
           <TouchableOpacity
             style={[
               dynamicStyles.loginButton,
-              { backgroundColor: "#ff3f6c" },
+              { backgroundColor: theme.primary },
             ]}
             onPress={() => router.push("/login")}
           >
@@ -103,7 +103,7 @@ export default function Profile() {
               { backgroundColor: accent },
             ]}
           >
-            <User size={40} color="#fff" />
+            <User size={40} color={theme.text} />
           </View>
 
           <View style={dynamicStyles.userDetails}>
@@ -140,11 +140,10 @@ export default function Profile() {
                 key={item}
                 style={dynamicStyles.toggleItem}
                 onPress={() => setMode(item as any)}
-              >
+              > {/*mode === item ? "#fff" : */}
                 <Text
                   style={{
-                    color:
-                      mode === item ? "#fff" : theme.text,
+                    color:theme.text,
                     fontWeight: "600",
                   }}
                 >
@@ -382,7 +381,7 @@ const createStyles = (theme: any, sliderWidth: number) =>
       borderRadius: 10,
     },
     loginButtonText: {
-      color: "#fff",
+      color: theme.text,
       fontWeight: "bold",
     },
   });

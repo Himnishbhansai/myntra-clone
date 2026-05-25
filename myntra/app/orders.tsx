@@ -69,7 +69,7 @@ export default function Orders() {
           { backgroundColor: colors.background },
         ]}
       >
-        <ActivityIndicator size="large" color={"#ff3f6c"} />
+        <ActivityIndicator size="large" color={theme.primary} />
       </View>
     );
   }
@@ -161,8 +161,8 @@ export default function Orders() {
                   { backgroundColor: colors.greenBg },
                 ]}
               >
-                <Package size={16} color={theme.success || "#ff3f6c"} />
-                <Text style={[styles.orderStatus, { color: theme.success || "#ff3f6c" }]}>
+                <Package size={16} color={theme.success || theme.primary} />
+                <Text style={[styles.orderStatus, { color: theme.success || theme.primary }]}>
                   {order.status}
                 </Text>
               </View>
@@ -322,7 +322,7 @@ export default function Orders() {
                   toggleOrderDetails(order._id)
                 }
               >
-                <Text style={[styles.detailsButtonText, { color: "#ff3f6c" }]}>
+                <Text style={[styles.detailsButtonText, { color: theme.text }]}>
                   {expandedOrder === order._id
                     ? "Hide Details"
                     : "View Details"}
@@ -330,7 +330,7 @@ export default function Orders() {
 
                 <ChevronRight
                   size={20}
-                  color={"#ff3f6c"}
+                  color={theme.primary}
                 />
               </TouchableOpacity>
             </View>
