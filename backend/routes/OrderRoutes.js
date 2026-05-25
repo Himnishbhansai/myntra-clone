@@ -145,7 +145,8 @@ router.post("/create/:userId", async (req, res) => {
       await sendPushNotification(
         user.expoPushToken,
         "Order Confirmed 🎉",
-        "Your order has been placed successfully!"
+        "Your order has been placed successfully!",
+        user._id
       );
     }
 
