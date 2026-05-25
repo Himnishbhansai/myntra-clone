@@ -12,11 +12,14 @@ import { useRouter } from "expo-router";
 import React from "react";
 import { Eye, EyeOff } from "lucide-react-native";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 import { registerForPushNotifications } from "@/utils/notifications";
 
 export default function Login() {
   const { login, user } = useAuth();
   const [email, setEmail] = useState("");
+  const { theme } = useTheme();
+  const styles = createStyles(theme);
   const [password, setPassword] = useState("");
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
@@ -77,9 +80,9 @@ export default function Login() {
             onPress={() => setShowPassword(!showPassword)}
           >
             {showPassword ? (
-              <EyeOff size={20} color="#666" />
+              <EyeOff size={20} color={theme.text} />
             ) : (
-              <Eye size={20} color="#666" />
+              <Eye size={20} color={theme.text} />
             )}
           </TouchableOpacity>
         </View>
@@ -90,7 +93,7 @@ export default function Login() {
           disabled={isloading}
         >
           {isloading ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color={theme.primary} />
           ) : (
             <Text style={styles.buttonText}>LOGIN</Text>
           )}
@@ -109,10 +112,11 @@ export default function Login() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: theme.background,
   },
   backgroundImage: {
     width: "100%",
@@ -124,7 +128,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     padding: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    backgroundColor: theme.background,
     marginTop: "60%",
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
@@ -133,15 +137,15 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "bold",
     marginBottom: 10,
-    color: "#3e3e3e",
+    color: theme.text,
   },
   subtitle: {
     fontSize: 16,
-    color: "#666",
+    color: theme.secondaryText,
     marginBottom: 30,
   },
   input: {
-    backgroundColor: "#f5f5f5",
+    backgroundColor: theme.background,
     padding: 15,
     borderRadius: 10,
     marginBottom: 15,
@@ -150,7 +154,7 @@ const styles = StyleSheet.create({
   passwordContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f5f5f5",
+    backgroundColor: theme.background,
     borderRadius: 10,
     marginBottom: 15,
   },
@@ -163,14 +167,14 @@ const styles = StyleSheet.create({
     padding: 15,
   },
   button: {
-    backgroundColor: "#ff3f6c",
+    backgroundColor: theme.primary,
     padding: 15,
     borderRadius: 10,
     alignItems: "center",
     marginTop: 10,
   },
   buttonText: {
-    color: "#fff",
+    color: theme.text,
     fontSize: 16,
     fontWeight: "bold",
   },
@@ -179,7 +183,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   signupText: {
-    color: "#ff3f6c",
+    color: theme.primary,
     fontSize: 16,
   },
 });

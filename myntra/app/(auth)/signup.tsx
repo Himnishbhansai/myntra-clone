@@ -13,9 +13,12 @@ import { useRouter } from "expo-router";
 import { Eye, EyeOff } from "lucide-react-native";
 import React from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 
 export default function Signup() {
   const { Signup } = useAuth();
+    const { theme } = useTheme();
+    const styles = createStyles(theme);
   const router = useRouter();
   const [isloading, setisloading] = useState(false);
   const [formData, setFormData] = useState({
@@ -146,9 +149,9 @@ export default function Signup() {
               onPress={() => setShowPassword(!showPassword)}
             >
               {showPassword ? (
-                <EyeOff size={20} color="#666" />
+                <EyeOff size={20} color={theme.text} />
               ) : (
-                <Eye size={20} color="#666" />
+                <Eye size={20} color={theme.text} />
               )}
             </TouchableOpacity>
           </View>
@@ -162,7 +165,7 @@ export default function Signup() {
           disabled={isloading}
         >
           {isloading ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color={theme.primary} />
           ) : (
             <Text style={styles.buttonText}>SIGN UP</Text>
           )}
@@ -179,10 +182,11 @@ export default function Signup() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: theme.background,
   },
   scrollContent: {
     flexGrow: 1,
@@ -196,7 +200,7 @@ const styles = StyleSheet.create({
   formContainer: {
     flex: 1,
     padding: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    backgroundColor: theme.background,
     marginTop: 250,
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
@@ -205,28 +209,28 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "bold",
     marginBottom: 10,
-    color: "#3e3e3e",
+    color: theme.text,
   },
   subtitle: {
     fontSize: 16,
-    color: "#666",
+    color: theme.secondaryText,
     marginBottom: 30,
   },
   inputGroup: {
     marginBottom: 15,
   },
   input: {
-    backgroundColor: "#f5f5f5",
+    backgroundColor: theme.background,
     padding: 15,
     borderRadius: 10,
     fontSize: 16,
   },
   inputError: {
     borderWidth: 1,
-    borderColor: "#ff3f6c",
+    borderColor: theme.primary,
   },
   errorText: {
-    color: "#ff3f6c",
+    color: theme.primary,
     fontSize: 12,
     marginTop: 5,
     marginLeft: 5,
@@ -234,7 +238,7 @@ const styles = StyleSheet.create({
   passwordContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f5f5f5",
+    backgroundColor: theme.background,
     borderRadius: 10,
   },
   passwordInput: {
@@ -246,14 +250,14 @@ const styles = StyleSheet.create({
     padding: 15,
   },
   button: {
-    backgroundColor: "#ff3f6c",
+    backgroundColor: theme.primary,
     padding: 15,
     borderRadius: 10,
     alignItems: "center",
     marginTop: 20,
   },
   buttonText: {
-    color: "#fff",
+    color: theme.text,
     fontSize: 16,
     fontWeight: "bold",
   },
@@ -262,7 +266,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   loginText: {
-    color: "#ff3f6c",
+    color: theme.primary,
     fontSize: 16,
   },
 });
