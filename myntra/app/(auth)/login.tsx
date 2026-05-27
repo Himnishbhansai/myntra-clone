@@ -17,15 +17,17 @@ import { registerForPushNotifications } from "@/utils/notifications";
 
 export default function Login() {
   const { login, user } = useAuth();
-  const [email, setEmail] = useState("");
   const { theme } = useTheme();
   const styles = createStyles(theme);
+
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [isloading, setisloading] = useState(false);
 
-  // ✅ REGISTER TOKEN ONLY ONCE AFTER LOGIN
+  const router = useRouter();
+
+  // ✅ Register push token after login
   useEffect(() => {
     if (user?._id) {
       registerForPushNotifications(user._id);
@@ -46,6 +48,7 @@ export default function Login() {
 
   return (
     <View style={styles.container}>
+      {/* Background */}
       <Image
         source={{
           uri: "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=2070&auto=format&fit=crop",
@@ -53,6 +56,10 @@ export default function Login() {
         style={styles.backgroundImage}
       />
 
+      {/* Overlay */}
+      <View style={styles.overlay} />
+
+      {/* Form */}
       <View style={styles.formContainer}>
         <Text style={styles.title}>Welcome to Myntra</Text>
         <Text style={styles.subtitle}>Login to continue shopping</Text>
@@ -60,6 +67,7 @@ export default function Login() {
         <TextInput
           style={styles.input}
           placeholder="Email"
+          placeholderTextColor="#888"
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
@@ -70,6 +78,7 @@ export default function Login() {
           <TextInput
             style={styles.passwordInput}
             placeholder="Password"
+            placeholderTextColor="#888"
             value={password}
             onChangeText={setPassword}
             secureTextEntry={!showPassword}
@@ -93,7 +102,7 @@ export default function Login() {
           disabled={isloading}
         >
           {isloading ? (
-            <ActivityIndicator color={theme.primary} />
+            <ActivityIndicator color="#fff" />
           ) : (
             <Text style={styles.buttonText}>LOGIN</Text>
           )}
@@ -112,78 +121,96 @@ export default function Login() {
   );
 }
 
-const createStyles = (theme: any) =>
+const createStyles = (theme) =>
   StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.background,
-  },
-  backgroundImage: {
-    width: "100%",
-    height: "50%",
-    position: "absolute",
-    top: 0,
-  },
-  formContainer: {
-    flex: 1,
-    justifyContent: "center",
-    padding: 20,
-    backgroundColor: theme.background,
-    marginTop: "60%",
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    marginBottom: 10,
-    color: theme.text,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: theme.secondaryText,
-    marginBottom: 30,
-  },
-  input: {
-    backgroundColor: theme.background,
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 15,
-    fontSize: 16,
-  },
-  passwordContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: theme.background,
-    borderRadius: 10,
-    marginBottom: 15,
-  },
-  passwordInput: {
-    flex: 1,
-    padding: 15,
-    fontSize: 16,
-  },
-  eyeIcon: {
-    padding: 15,
-  },
-  button: {
-    backgroundColor: theme.primary,
-    padding: 15,
-    borderRadius: 10,
-    alignItems: "center",
-    marginTop: 10,
-  },
-  buttonText: {
-    color: theme.text,
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  signupLink: {
-    marginTop: 20,
-    alignItems: "center",
-  },
-  signupText: {
-    color: theme.primary,
-    fontSize: 16,
-  },
-});
+    container: {
+      flex: 1,
+      justifyContent: "center",
+      backgroundColor: theme.background,
+    },
+
+    backgroundImage: {
+      ...StyleSheet.absoluteFillObject,
+    },
+
+    overlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: "rgba(0,0,0,0.4)",
+    },
+
+    formContainer: {
+      width: "90%",
+      maxWidth: 400, // ✅ fixes desktop issue
+      alignSelf: "center",
+      padding: 20,
+      borderRadius: 20,
+      backgroundColor: theme.card,
+    },
+
+    title: {
+      fontSize: 28,
+      fontWeight: "bold",
+      marginBottom: 10,
+      color: theme.text,
+      textAlign: "center",
+    },
+
+    subtitle: {
+      fontSize: 16,
+      color: theme.secondaryText,
+      marginBottom: 30,
+      textAlign: "center",
+    },
+
+    input: {
+      backgroundColor: theme.background,
+      padding: 15,
+      borderRadius: 10,
+      marginBottom: 15,
+      fontSize: 16,
+      color: theme.text,
+    },
+
+    passwordContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: theme.background,
+      borderRadius: 10,
+      marginBottom: 15,
+    },
+
+    passwordInput: {
+      flex: 1,
+      padding: 15,
+      fontSize: 16,
+      color: theme.text,
+    },
+
+    eyeIcon: {
+      padding: 15,
+    },
+
+    button: {
+      backgroundColor: theme.primary,
+      padding: 15,
+      borderRadius: 10,
+      alignItems: "center",
+      marginTop: 10,
+    },
+
+    buttonText: {
+      color: "#fff",
+      fontSize: 16,
+      fontWeight: "bold",
+    },
+
+    signupLink: {
+      marginTop: 20,
+      alignItems: "center",
+    },
+
+    signupText: {
+      color: theme.primary,
+      fontSize: 16,
+    },
+  });
